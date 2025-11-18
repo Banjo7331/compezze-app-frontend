@@ -1,13 +1,20 @@
 export interface ILoginRequest {
+  usernameOrEmail: string; 
+  password: string;
+}
+
+export interface IRegisterRequest {
+  username: string;
   email: string;
   password: string;
 }
 
-// Co otrzymujemy od API
 export interface IAuthResponse {
   accessToken: string;
-  user: {
-    id: string;
-    email: string;
-  };
+  refreshToken: string;
+  tokenType: string;
+}
+
+export interface IRefreshRequest {
+  refreshToken: string;
 }
