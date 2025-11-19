@@ -2,32 +2,33 @@ import React from 'react';
 import { Container, Typography, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
-// Importujemy Formularz z folderu features!
 import { SurveyCreateForm } from '@/features/survey/components/SurveyCreateForm'; 
+// Nie potrzebujemy innych importów API, bo cała logika jest w komponencie niżej
 
 const SurveyCreatePage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleCancel = () => {
+    // Wróć do strony głównej Survey
     navigate('/survey');
   };
 
-  const handleSuccess = () => {
-    // Po udanym zapisie, przejdź do strony ankiet
-    navigate('/survey');
+  const handleFormCreated = () => {
+    // KROK: Po utworzeniu FORMULARZA, po prostu wracamy do listy formularzy.
+    navigate('/survey'); 
   };
 
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
-          Create New Survey
+        <Typography variant="h4" component="h1" gutterBottom align="center">
+          Utwórz Nową Ankietę
         </Typography>
         
-        {/* Renderowanie Komponentu Formularza */}
+        {/* Renderujemy Formularz, który wykona całą pracę */}
         <SurveyCreateForm 
             onCancel={handleCancel} 
-            onSuccess={handleSuccess} 
+            onSuccess={handleFormCreated} // Wywołuje przekierowanie
         />
         
       </Box>

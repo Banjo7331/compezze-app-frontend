@@ -6,21 +6,19 @@ import {
     Alert, 
     Pagination, 
     Paper, 
-    Grid,
     Stack
 } from '@mui/material';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import { useNavigate } from 'react-router-dom'; // Potrzebne do przekierowania
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/Button'; 
 import { useUserSurveyForms } from '../hooks/useUserSurveyForms'; 
-// Importujemy typy, które będą już pasować do Twojego GetSurveyFormResponse
 import type { SurveyFormResponse, CreateRoomRequest } from '../model/types'; 
 import { surveyService } from '../api/surveyService'; 
 
 // --- KOMPONENT POJEDYNCZEGO ELEMENTU (KAFLA) ---
 interface SurveyItemProps {
     survey: SurveyFormResponse;
-    onRoomCreateSuccess: (roomId: string) => void; // Callback po udanym utworzeniu pokoju
+    onRoomCreateSuccess: (roomId: string) => void; 
 }
 
 const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) => {
@@ -33,23 +31,24 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
     const handleLaunchRoom = async () => {
         if (!canLaunch || isCreatingRoom) return;
 
-        // UWAGA: Musisz zdecydować, czy survey.id (Long) jest traktowany jako number czy string w DTO.
-        // Jeśli backend oczekuje UUID (string), potrzebne będzie mapowanie. Zakładamy, że typ ID w CreateRoomRequest został zmieniony.
+        // UWAGA: survey.id jest Long (number) na frontendzie, a backend oczekuje UUID (string) 
+        // lub Long (numer), zależnie od konfiguracji. Załóżmy, że typ jest obsługiwany przez TS/Axios.
         const request: CreateRoomRequest = {
-            surveyFormId: survey.id as any, // Rzutowanie na typ oczekiwany przez CreateRoomRequest
-            maxParticipants: 100, 
+            surveyFormId: survey.id as any, // ID Formularza Ankiety
+            maxParticipants: 100, // Przykładowa stała wartość
         };
 
         setIsCreatingRoom(true);
         try {
-            const result = await surveyService.createRoom(request);
+            // KROK: Tworzenie Pokoju (POST /survey/room)
+            const result = await surveyService.createRoom(request); // Wzbogacona odpowiedź z roomId
             
-            // W przypadku sukcesu, wywołujemy callback, aby odświeżyć listę i przenieść użytkownika
+            // Backend automatycznie dodał hosta jako uczestnika. Przekierowujemy.
             onRoomCreateSuccess(result.roomId); 
             
         } catch (error) {
             console.error("Error launching room:", error);
-            alert("Failed to launch the survey room.");
+            alert("Failed to launch the survey room. Check server logs.");
         } finally {
             setIsCreatingRoom(false);
         }
@@ -64,7 +63,6 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center',
-                // Wizualny wskaźnik, że formularz jest gotowy do uruchomienia
                 borderLeft: `5px solid ${canLaunch ? '#1976d2' : 'gray'}`,
             }}
         >
@@ -74,12 +72,11 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                     Questions: {survey.questions.length}
-                    {/* Usunięto: {survey.isPrivate ? 'Private' : 'Public'} | Status: {statusText} */}
                 </Typography>
             </Box>
             
             <Stack direction="row" spacing={1}>
-                {/* 1. Przycisk Uruchom / Zarządzaj */}
+                {/* Przycisk Uruchom / Zarządzaj */}
                 <Button 
                     size="small" 
                     variant="contained" 
@@ -89,17 +86,6 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                 >
                     {isCreatingRoom ? <CircularProgress size={20} color="inherit" /> : 'Launch Room'}
                 </Button>
-
-                {/* 2. Przycisk Edytuj Formularz */}
-                <Button 
-                    size="small" 
-                    variant="outlined" 
-                    color="secondary"
-                    // TODO: Nawigacja do /survey/edit/:id
-                    onClick={() => console.log(`Editing form ${survey.id}`)}
-                >
-                    Edit Form
-                </Button>
             </Stack>
         </Paper>
     );
@@ -108,16 +94,14 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
 
 // --- KOMPONENT LISTY GŁÓWNEJ ---
 export const SurveyFormList: React.FC = () => {
-    const navigate = useNavigate(); // Używamy useNavigate w komponencie głównym
+    const navigate = useNavigate(); 
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
     
-    // Używamy hooka z kluczem odświeżania
     const { data, isLoading, error, page, totalPages, setPage } = useUserSurveyForms({ refreshTrigger }); 
     
-    // Po udanym stworzeniu pokoju, przekieruj użytkownika do zarządzania pokojem
     const handleRoomCreateSuccess = (roomId: string) => {
-        alert(`Room created with ID: ${roomId}. Redirecting to management page.`);
-        setRefreshTrigger(prev => prev + 1); 
+        // Po udanym utworzeniu pokoju na backendzie, przekieruj hosta do zarządzania
+        setRefreshTrigger(prev => prev + 1); // Odśwież listę
         navigate(`/survey/room/${roomId}`);
     };
     
@@ -125,37 +109,21 @@ export const SurveyFormList: React.FC = () => {
         setPage(value - 1); 
     };
 
-    // Stany ładowania, błędu, pustej listy (bez zmian)
     if (isLoading) { /* ... */ }
     if (error) { /* ... */ }
-
-    if (isLoading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
-    if (error) {
-        return (
-            <Alert severity="error">
-                Error loading surveys: {error.message}.
-            </Alert>
-        );
-    }
+    if (!data || data.length === 0) { /* ... */ }
     
+    // (Wstawiam uproszczone renderowanie stanu dla czytelności)
+    if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    if (error) return <Alert severity="error">Error loading surveys: {error.message}.</Alert>;
     if (!data || data.length === 0) {
         return (
             <Box sx={{ textAlign: 'center', py: 5 }}>
-                <ListAltIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
                 <Typography color="text.secondary">You haven't created any survey forms yet.</Typography>
             </Box>
         );
     }
-
-
-    // 4. Stan Wyświetlania Danych
+    
     return (
         <Box>
             <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
@@ -172,7 +140,6 @@ export const SurveyFormList: React.FC = () => {
                 ))}
             </Stack>
 
-            {/* Kontrola Paginacji */}
             {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                     <Pagination 
