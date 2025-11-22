@@ -1,25 +1,27 @@
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../api/authApi';
-import type { ILoginRequest, IAuthResponse } from '../model/types';
+import { authApi } from '../api/authApi'; // Importujemy obiekt
+import type { LoginRequest, AuthResponse } from '../model/types';
+import { useAuth } from '../AuthContext';
 
 export const useLogin = () => {
-  const navigate = useNavigate();
+    const { authenticate } = useAuth(); 
 
-  return useMutation<IAuthResponse, Error, ILoginRequest>({
-    mutationFn: login,
-    onSuccess: (data) => {
-      // Sukces! Zapisujemy token
-      localStorage.setItem('authToken', data.accessToken);
-      
-      // USUNIĘTO: connectSocket();
-      // (Połączymy się ręcznie, gdy będzie to potrzebne)
-      
-      // Przekierowujemy na stronę główną
-      navigate('/');
-    },
-    onError: (error) => {
-      console.error('Błąd logowania:', error.message);
-    },
-  });
+    const { mutate, isPending, isError, error } = useMutation<AuthResponse, Error, LoginRequest>({
+        // Używamy funkcji strzałkowej, aby wywołać metodę z obiektu
+        mutationFn: (credentials) => authApi.login(credentials), 
+        
+        onSuccess: async (data) => {
+            // Przekazujemy tylko AccessToken (Refresh jest w cookie)
+            await authenticate(data.accessToken);
+        },
+        onError: (err) => {
+            console.error('Login failed:', err);
+        },
+    });
+
+    return {
+        login: (creds: LoginRequest) => mutate(creds),
+        isLoading: isPending,
+        error: error ? error.message : null,
+    };
 };

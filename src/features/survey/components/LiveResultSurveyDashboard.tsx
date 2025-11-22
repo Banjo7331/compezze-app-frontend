@@ -44,7 +44,7 @@ const QuestionVisualization: React.FC<QuestionVizProps> = ({ result }) => {
     const questionType = result.type as RestQuestionType; 
 
     // 1. WYKRES SŁUPKOWY
-    if (questionType !== 'TEXT') {
+    if (questionType !== 'OPEN_TEXT') {
         chartData.sort((a, b) => b.count - a.count);
         return (
             <ResponsiveContainer width="100%" height={300}>

@@ -226,7 +226,7 @@ const renderQuestionInput = (
                 </Stack>
             );
             
-        case QuestionTypeValues.TEXT:
+        case QuestionTypeValues.OPEN_TEXT:
             return (
                 <TextField 
                     fullWidth 

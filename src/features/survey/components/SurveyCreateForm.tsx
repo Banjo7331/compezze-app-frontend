@@ -52,7 +52,7 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
 
     const areQuestionsValid = questions.every(q => {
         if (q.title.trim().length === 0) return false;
-        if (q.type !== QuestionTypeValues.TEXT) {
+        if (q.type !== QuestionTypeValues.OPEN_TEXT) {
             return q.possibleChoices.length > 0 && q.possibleChoices.every(c => c.trim().length > 0);
         }
         return true; 
@@ -78,10 +78,10 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
     const updateQuestion = (id: number, field: keyof QuestionDraft, value: any) => {
         setQuestions(questions.map(q => {
             if (q.id === id) {
-                if (field === 'type' && value === QuestionTypeValues.TEXT) {
+                if (field === 'type' && value === QuestionTypeValues.OPEN_TEXT) {
                     return { ...q, [field]: value, possibleChoices: [] };
                 }
-                if (field === 'type' && value !== QuestionTypeValues.TEXT && q.type === QuestionTypeValues.TEXT) {
+                if (field === 'type' && value !== QuestionTypeValues.OPEN_TEXT && q.type === QuestionTypeValues.OPEN_TEXT) {
                      return { ...q, [field]: value, possibleChoices: [''] };
                 }
                 return { ...q, [field]: value };
@@ -138,7 +138,7 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
             questions: questions.map(q => ({
                 title: q.title,
                 type: q.type,
-                possibleChoices: q.type === QuestionTypeValues.TEXT ? [] : q.possibleChoices.filter(c => c.trim().length > 0)
+                possibleChoices: q.type === QuestionTypeValues.OPEN_TEXT ? [] : q.possibleChoices.filter(c => c.trim().length > 0)
             }))
         };
 
@@ -224,13 +224,13 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
                                                         >
                                                             <MenuItem value={QuestionTypeValues.SINGLE_CHOICE}>Single Choice</MenuItem>
                                                             <MenuItem value={QuestionTypeValues.MULTIPLE_CHOICE}>Multiple Choice</MenuItem>
-                                                            <MenuItem value={QuestionTypeValues.TEXT}>Text</MenuItem>
+                                                            <MenuItem value={QuestionTypeValues.OPEN_TEXT}>Text</MenuItem>
                                                         </Select>
                                                     </FormControl>
                                                 </Grid>
                                             </Grid>
 
-                                            {q.type !== QuestionTypeValues.TEXT && (
+                                            {q.type !== QuestionTypeValues.OPEN_TEXT && (
                                                 <Box sx={{ mt: 2, ml: 2 }}>
                                                     <Stack spacing={1}>
                                                         {q.possibleChoices.map((choice, cIndex) => (

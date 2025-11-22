@@ -1,58 +1,52 @@
 import { useState, useEffect } from 'react';
 
-// Importy typów
+// Importy typów z warstwy Shared (Paginacja)
 import type { Page, PageableParams } from '@/shared/api/types'; 
+// Importy typów domenowych
 import type { SurveyFormResponse } from '../model/types'; 
+// Import serwisu
 import { surveyService } from '../api/surveyService';
 
-// --- NOWY INTERFEJS DLA PARAMETRÓW HOOKA ---
-// Rozszerzamy ogólne parametry paginacji o opcjonalny trigger odświeżania.
+// Rozszerzamy parametry o trigger odświeżania (przydatne po utworzeniu nowej ankiety)
 interface UseUserSurveyFormsParams extends PageableParams {
     refreshTrigger?: number; 
 }
 
-interface UseUserSurveyFormsResult {
-    data: SurveyFormResponse[] | null;
-    isLoading: boolean;
-    error: Error | null;
-    page: number;
-    totalPages: number;
-    setPage: (newPage: number) => void;
-}
+const DEFAULT_PAGE_SIZE = 10;
 
-const DEFAULT_PAGE_SIZE = 20;
+export const useUserSurveyForms = (params: UseUserSurveyFormsParams = {}) => {
+    // Destrukturyzacja parametrów z wartościami domyślnymi
+    const { 
+        refreshTrigger = 0, 
+        page: initialPage = 0,
+        size = DEFAULT_PAGE_SIZE,
+        sort = 'id,desc' // Domyślne sortowanie: najnowsze
+    } = params;
 
-// FIX: Zmieniamy argument hooka, aby przyjmował nasz rozszerzony interfejs
-export const useUserSurveyForms = (params: UseUserSurveyFormsParams = {}): UseUserSurveyFormsResult => {
-    // 1. Destrukturyzacja i wyodrębnienie refreshTrigger i domyślnych parametrów
-    const { refreshTrigger = 0, page: initialPage = 0 } = params;
-    
-    // Używamy PageableParams do przekazania reszty opcji (rozmiar, sortowanie) do serwisu
-    const apiParams: PageableParams = { 
-        size: params.size || DEFAULT_PAGE_SIZE,
-        sort: params.sort || 'title,asc',
-    };
-    
-    // 2. Stan (dostosowany)
+    // --- STAN ---
     const [data, setData] = useState<SurveyFormResponse[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    
+    // Stan paginacji
     const [page, setPage] = useState(initialPage);
     const [totalPages, setTotalPages] = useState(1);
-    
-    // --- Logika Fetching'u ---
+
+    // --- EFEKT POBIERANIA DANYCH ---
     useEffect(() => {
         const fetchForms = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                // Składamy parametry API: strona + stałe parametry
-                const fetchParams: PageableParams = {
-                    ...apiParams,
-                    page: page,
+                // Składamy parametry zapytania
+                const apiParams: PageableParams = {
+                    page,
+                    size,
+                    sort
                 };
 
-                const response = await surveyService.getAllForms(fetchParams) as Page<SurveyFormResponse>;
+                // Wywołanie serwisu (rzutujemy na Page<SurveyFormResponse> dla pewności typów)
+                const response = await surveyService.getAllForms(apiParams) as Page<SurveyFormResponse>;
                 
                 setData(response.content);
                 setTotalPages(response.totalPages);
@@ -65,16 +59,16 @@ export const useUserSurveyForms = (params: UseUserSurveyFormsParams = {}): UseUs
             }
         };
 
-        // Zależności muszą obejmować 'page' i 'refreshTrigger'
         fetchForms();
-    }, [page, refreshTrigger]); 
+    }, [page, size, sort, refreshTrigger]); // Re-fetch przy zmianie tych wartości
 
+    // --- ZWRACANE WARTOŚCI ---
     return {
         data,
         isLoading,
         error,
         page,
         totalPages,
-        setPage,
+        setPage, // Funkcja do zmiany strony (używana w Pagination)
     };
 };

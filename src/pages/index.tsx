@@ -5,8 +5,8 @@ import { LinearProgress } from '@mui/material';
 
 // Dynamiczne importy (lazy loading)
 const HomePage = lazy(() => import('./HomePage'));
-const LoginPage = lazy(() => import('./LoginPage'));
-
+const LoginPage = lazy(() => import('./auth/LoginPage'));
+const RegisterPage = lazy(() => import('./auth/RegisterPage'));
 // --- Trasy Survey ---
 const SurveyPage = lazy(() => import('./survey/SurveyPage'));
 const SurveyCreatePage = lazy(() => import('./survey/SurveyCreatePage'));
@@ -50,6 +50,8 @@ export const Routing = () => {
         {/* NOWE: TRASA UCZESTNIKA (PARTICIPANT VIEW) */}
         {/* Uczestnik nie potrzebuje Navbaru/Autoryzacji, więc jest poza <Layout> */}
         <Route path="/join/:roomId" element={<SurveyParticipantPage />} /> 
+        {/* 2. REJESTRUJEMY TRASĘ TUTAJ */}
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* 404 */}
         <Route path="*" element={<div>404 - Strony nie znaleziono</div>} />

@@ -36,7 +36,7 @@ export class BaseSocketClient<T> {
   // --- METODY CYKLU ŻYCIA ---
 
   public activate() {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('accessToken');
     if (token) {
       this.client.connectHeaders = {
         Authorization: `Bearer ${token}`,

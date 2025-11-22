@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/api/apiClient';
 // Uzupełnienie typów: CreateRoomRequest nie jest używany w tym serwisie, 
 // ale zakładam, że jest potrzebny. Musimy dodać typ dla paginowanej odpowiedzi.
-import type { CreateSurveyFormRequest, CreateRoomRequest, SurveyFormResponse, RoomResponse, SubmitParticipantAnswerRequest, SubmitSurveyAttemptRequest } from '../model/types';
+import type { CreateSurveyFormRequest, CreateRoomRequest, SurveyFormResponse, RoomResponse, SubmitParticipantAnswerRequest, SubmitSurveyAttemptRequest, SurveyRoomDetailsResponse, ActiveRoomResponse } from '../model/types';
 
 
 // Dodatkowe, generyczne typy dla paginacji (założenia na podstawie Spring Pageable)
@@ -46,6 +46,16 @@ export const surveyService = {
   createRoom: async (data: CreateRoomRequest) => {
     const response = await apiClient.post<RoomResponse>('/survey/room', data);
     return response.data;
+  },
+
+  getActiveRooms: async (params?: PageableParams) => {
+        const response = await apiClient.get<Page<ActiveRoomResponse>>('/survey/room/active', { params });
+        return response.data;
+  },
+
+  getRoomDetails: async (roomId: string) => {
+        const response = await apiClient.get<SurveyRoomDetailsResponse>(`/survey/room/${roomId}`);
+        return response.data;
   },
 
   // Dołączanie do pokoju (bez zmian, endpoint /survey/room/{roomId}/join jest poprawny)

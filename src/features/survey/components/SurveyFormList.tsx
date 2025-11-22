@@ -24,28 +24,23 @@ interface SurveyItemProps {
 const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) => {
     const [isCreatingRoom, setIsCreatingRoom] = useState(false);
     
-    // Status jest teraz zależny od tego, czy formularz ma pytania (min 1)
-    const canLaunch = survey.questions && survey.questions.length > 0;
+    // FIX: W widoku listy nie mamy pytań, więc nie możemy sprawdzić ich liczby.
+    // Zakładamy, że formularz jest poprawny.
+    const canLaunch = true;
     
-    // Obsługa kliknięcia "Uruchom Pokój"
     const handleLaunchRoom = async () => {
-        if (!canLaunch || isCreatingRoom) return;
+        if (isCreatingRoom) return;
 
-        // UWAGA: survey.id jest Long (number) na frontendzie, a backend oczekuje UUID (string) 
-        // lub Long (numer), zależnie od konfiguracji. Załóżmy, że typ jest obsługiwany przez TS/Axios.
         const request: CreateRoomRequest = {
-            surveyFormId: survey.id as any, // ID Formularza Ankiety
-            maxParticipants: 100, // Przykładowa stała wartość
+            // FIX: Używamy surveyFormId zamiast id
+            surveyFormId: survey.surveyFormId as any, 
+            // maxParticipants usunięte (opcjonalne)
         };
 
         setIsCreatingRoom(true);
         try {
-            // KROK: Tworzenie Pokoju (POST /survey/room)
-            const result = await surveyService.createRoom(request); // Wzbogacona odpowiedź z roomId
-            
-            // Backend automatycznie dodał hosta jako uczestnika. Przekierowujemy.
+            const result = await surveyService.createRoom(request);
             onRoomCreateSuccess(result.roomId); 
-            
         } catch (error) {
             console.error("Error launching room:", error);
             alert("Failed to launch the survey room. Check server logs.");
@@ -63,7 +58,7 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center',
-                borderLeft: `5px solid ${canLaunch ? '#1976d2' : 'gray'}`,
+                borderLeft: `5px solid ${survey.isPrivate ? 'gray' : '#1976d2'}`,
             }}
         >
             <Box>
@@ -71,12 +66,12 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                     {survey.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                    Questions: {survey.questions.length}
+                    {/* FIX: Zamiast licznika pytań (którego nie ma), pokazujemy status */}
+                    {survey.isPrivate ? 'Prywatna' : 'Publiczna'}
                 </Typography>
             </Box>
             
-            <Stack direction="row" spacing={1}>
-                {/* Przycisk Uruchom / Zarządzaj */}
+            <Box>
                 <Button 
                     size="small" 
                     variant="contained" 
@@ -86,7 +81,7 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                 >
                     {isCreatingRoom ? <CircularProgress size={20} color="inherit" /> : 'Launch Room'}
                 </Button>
-            </Stack>
+            </Box>
         </Paper>
     );
 };
@@ -100,8 +95,7 @@ export const SurveyFormList: React.FC = () => {
     const { data, isLoading, error, page, totalPages, setPage } = useUserSurveyForms({ refreshTrigger }); 
     
     const handleRoomCreateSuccess = (roomId: string) => {
-        // Po udanym utworzeniu pokoju na backendzie, przekieruj hosta do zarządzania
-        setRefreshTrigger(prev => prev + 1); // Odśwież listę
+        setRefreshTrigger(prev => prev + 1); 
         navigate(`/survey/room/${roomId}`);
     };
     
@@ -109,31 +103,29 @@ export const SurveyFormList: React.FC = () => {
         setPage(value - 1); 
     };
 
-    if (isLoading) { /* ... */ }
-    if (error) { /* ... */ }
-    if (!data || data.length === 0) { /* ... */ }
-    
-    // (Wstawiam uproszczone renderowanie stanu dla czytelności)
     if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error">Error loading surveys: {error.message}.</Alert>;
+    
     if (!data || data.length === 0) {
         return (
             <Box sx={{ textAlign: 'center', py: 5 }}>
-                <Typography color="text.secondary">You haven't created any survey forms yet.</Typography>
+                <ListAltIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography color="text.secondary">Nie utworzyłeś jeszcze żadnych ankiet.</Typography>
             </Box>
         );
     }
-    
+
     return (
         <Box>
             <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                Your Survey Forms (Templates)
+                Twoje Szablony
             </Typography>
             
             <Stack spacing={1}>
                 {data.map((survey) => (
                     <SurveyItem 
-                        key={survey.id} 
+                        // FIX: Używamy surveyFormId jako klucza
+                        key={survey.surveyFormId} 
                         survey={survey} 
                         onRoomCreateSuccess={handleRoomCreateSuccess}
                     />

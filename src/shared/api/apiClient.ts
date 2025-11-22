@@ -8,11 +8,16 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // KLUCZOWA ZMIANA: Pozwala na przesyłanie ciasteczek (HttpOnly Refresh Token)
+  // jest to niezbędne przy komunikacji z Gatewayem na innej domenie/porcie
+  withCredentials: true, 
 });
 
-// Interceptor, który będzie dodawał token JWT do każdego zapytania
+// Interceptor, który dodaje Access Token (krótko żyjący) do nagłówka
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken'); // Na razie szukamy tokena w localStorage
+  // Zmieniliśmy nazwę klucza w AuthContext na 'accessToken'
+  const token = localStorage.getItem('accessToken'); 
+  
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
