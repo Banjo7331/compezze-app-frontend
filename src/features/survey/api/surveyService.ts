@@ -12,7 +12,6 @@ export interface Page<T> {
     totalElements: number;
     size: number;
     number: number;
-    // ... inne pola Pageable (sort, first, last, itp.)
 }
 
 export interface PageableParams {

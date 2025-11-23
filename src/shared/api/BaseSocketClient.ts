@@ -57,8 +57,10 @@ export class BaseSocketClient<T> {
   // --- METODY CYKLU ŻYCIA ---
 
   public activate() {
-    // ZMIANA: Po prostu aktywujemy klienta.
-    // Logika pobierania tokena została przeniesiona do beforeConnect wyżej.
+    if (this.client.active) {
+        return; 
+    }
+
     console.log(`[${this.serviceName}] Activating client...`);
     this.client.activate();
   }

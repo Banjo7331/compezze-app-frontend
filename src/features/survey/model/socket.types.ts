@@ -18,24 +18,27 @@ export interface FinalRoomResultDto {
 // --- SOCKET MESSAGES (Payloads) ---
 
 export interface UserJoinedSocketMessage {
-    // Zawierać będzie: participantId, userId, newParticipantCount
+    event: 'USER_JOINED'; // <--- To jest kluczowe dla TypeScripta
     participantId: number; 
     userId: string;
     newParticipantCount: number;
-    // Oraz klucz "event" zdefiniowany na poziomie Springa
 }
 
+// 2. LIVE UPDATE
 export interface LiveResultUpdateSocketMessage {
-    liveResults: FinalRoomResultDto;
+    event: 'LIVE_RESULTS_UPDATE'; // <--- Kluczowe
+    currentResults: FinalRoomResultDto; // To już poprawiłeś, jest OK (zgodne z Javą)
 }
 
+// 3. ROOM CLOSED
 export interface RoomClosedSocketMessage {
+    event: 'ROOM_CLOSED'; // <--- Kluczowe
     finalResults: FinalRoomResultDto;
 }
 
 
 // --- GŁÓWNY TYP WIADOMOŚCI WEBSOCKET (Dla ujednolicenia) ---
-export type SurveySocketMessage = {
-    event: 'USER_JOINED' | 'LIVE_RESULTS_UPDATE' | 'ROOM_CLOSED';
-    payload: UserJoinedSocketMessage | LiveResultUpdateSocketMessage | RoomClosedSocketMessage;
-}
+export type SurveySocketMessage = 
+    | UserJoinedSocketMessage 
+    | LiveResultUpdateSocketMessage 
+    | RoomClosedSocketMessage;

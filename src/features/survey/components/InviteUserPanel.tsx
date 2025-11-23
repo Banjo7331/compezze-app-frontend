@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
-    Box, Paper, Typography, TextField, Stack, Divider, IconButton, Tooltip, Chip
+    Box, Paper, Typography, Stack, Divider, IconButton, Tooltip, Chip, 
+    Autocomplete, TextField, CircularProgress
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SendIcon from '@mui/icons-material/Send';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { debounce } from '@mui/material/utils'; // Helper z MUI
+
 import { Button } from '@/shared/ui/Button';
 import { surveyService } from '../api/surveyService';
+import { userService } from '@/features/user/api/userService';
+import type { UserSummary } from '@/features/user/model/types';
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
 
 interface InviteUsersPanelProps {
@@ -13,36 +19,80 @@ interface InviteUsersPanelProps {
 }
 
 export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) => {
-    const [userIdsInput, setUserIdsInput] = useState(''); 
+    // --- STAN AUTOCOMPLETE ---
+    const [open, setOpen] = useState(false);
+    const [options, setOptions] = useState<UserSummary[]>([]);
+    const [loadingSearch, setLoadingSearch] = useState(false);
+    
+    // Wybrani użytkownicy (całe obiekty)
+    const [selectedUsers, setSelectedUsers] = useState<UserSummary[]>([]);
+
+    // --- STAN WYSYŁANIA ---
     const [generatedLinks, setGeneratedLinks] = useState<Record<string, string> | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    
     const { showSuccess, showError } = useSnackbar();
 
-    const handleGenerate = async () => {
-        // 1. Parsowanie inputu (rozdzielamy po przecinku, usuwamy białe znaki)
-        const ids = userIdsInput
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
-        
-        if (ids.length === 0) {
-            showError("Wpisz przynajmniej jedno ID użytkownika.");
+    // --- 1. LOGIKA WYSZUKIWANIA (DEBOUNCE) ---
+    const fetchUsers = useMemo(
+        () =>
+            debounce(async (input: string, callback: (results: UserSummary[]) => void) => {
+                try {
+                    const results = await userService.searchUsers(input);
+                    callback(results);
+                } catch (e) {
+                    callback([]);
+                }
+            }, 400), // Czekaj 400ms po przestaniu pisania
+        [],
+    );
+
+    useEffect(() => {
+        let active = true;
+
+        if (!open) {
+            setOptions([]);
+            return undefined;
+        }
+
+        return () => {
+            active = false;
+        };
+    }, [open]);
+
+    // Handler wpisywania tekstu
+    const handleInputChange = (event: any, newInputValue: string) => {
+        if (newInputValue === '') {
+            setOptions([]);
             return;
         }
 
-        setIsLoading(true);
+        setLoadingSearch(true);
+        fetchUsers(newInputValue, (results) => {
+            setLoadingSearch(false);
+            setOptions(results);
+        });
+    };
+
+    // --- 2. LOGIKA WYSYŁANIA ---
+    const handleSendInvites = async () => {
+        if (selectedUsers.length === 0) return;
+
+        // Mapujemy obiekty na same ID
+        const ids = selectedUsers.map(u => u.id);
+
+        setIsSending(true);
         try {
-            // 2. Strzał do API
             const tokensMap = await surveyService.generateInvites(roomId, ids);
             
             setGeneratedLinks(tokensMap);
-            showSuccess(`Wysłano zaproszenia do ${Object.keys(tokensMap).length} użytkowników!`);
-            setUserIdsInput(''); // Czyścimy input
+            showSuccess(`Wysłano zaproszenia do ${ids.length} użytkowników!`);
+            setSelectedUsers([]); // Czyścimy wybór
         } catch (error) {
             console.error(error);
-            showError("Nie udało się wygenerować zaproszeń.");
+            showError("Nie udało się wysłać zaproszeń.");
         } finally {
-            setIsLoading(false);
+            setIsSending(false);
         }
     };
 
@@ -51,49 +101,86 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
         showSuccess("Link skopiowany!");
     };
 
-    // Budujemy pełny URL zaproszenia
     const joinBaseUrl = `${window.location.origin}/survey/join/${roomId}`;
 
     return (
         <Paper elevation={4} sx={{ p: 3, mb: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                📨 Zaproś Użytkowników
+                <PersonAddIcon sx={{ mr: 1 }} color="action"/> Zaproś Użytkowników
             </Typography>
+            
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Wpisz UUID użytkowników oddzielone przecinkami. System wyśle im powiadomienie oraz wygeneruje unikalne linki (Soulbound).
+                Wyszukaj użytkowników po nazwie, aby wysłać im zaproszenie i wygenerować bilety wstępu.
             </Typography>
 
-            {/* INPUT */}
             <Stack spacing={2}>
-                <TextField 
-                    label="Lista UUID (np. uuid-1, uuid-2)"
-                    placeholder="e.g. 123e4567-e89b..., 987c6543-e21b..."
-                    fullWidth
-                    multiline
-                    rows={2}
-                    value={userIdsInput}
-                    onChange={(e) => setUserIdsInput(e.target.value)}
-                    disabled={isLoading}
+                {/* --- AUTOCOMPLETE (Wyszukiwarka) --- */}
+                <Autocomplete
+                    multiple
+                    open={open}
+                    onOpen={() => setOpen(true)}
+                    onClose={() => setOpen(false)}
+                    
+                    // Opcje to wyniki wyszukiwania
+                    options={options}
+                    // Jak wyświetlać opcję na liście
+                    getOptionLabel={(option) => option.username}
+                    // Unikalność
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    
+                    // Obsługa wpisywania (szukanie w API)
+                    onInputChange={handleInputChange}
+                    
+                    // Obsługa wyboru (zapisywanie do stanu)
+                    value={selectedUsers}
+                    onChange={(event, newValue) => {
+                        setSelectedUsers(newValue);
+                    }}
+
+                    loading={loadingSearch}
+                    noOptionsText="Brak użytkowników o takiej nazwie"
+                    
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Wyszukaj użytkowników..."
+                            placeholder="Wpisz nazwę (np. 'user')"
+                            InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                    <React.Fragment>
+                                        {loadingSearch ? <CircularProgress color="inherit" size={20} /> : null}
+                                        {params.InputProps.endAdornment}
+                                    </React.Fragment>
+                                ),
+                            }}
+                        />
+                    )}
                 />
+
                 <Button 
                     variant="contained" 
-                    onClick={handleGenerate} 
-                    disabled={isLoading || !userIdsInput}
-                    startIcon={isLoading ? undefined : <SendIcon />}
+                    onClick={handleSendInvites} 
+                    disabled={isSending || selectedUsers.length === 0}
+                    startIcon={isSending ? undefined : <SendIcon />}
                 >
-                    {isLoading ? 'Wysyłanie...' : 'Wyślij Zaproszenia'}
+                    {isSending ? 'Wysyłanie...' : `Zaproś ${selectedUsers.length} osób`}
                 </Button>
             </Stack>
 
-            {/* WYNIKI (Opcjonalnie, jeśli Host chce ręcznie wysłać link) */}
+            {/* --- WYNIKI (LINKI) --- */}
             {generatedLinks && (
                 <Box sx={{ mt: 3 }}>
                     <Divider sx={{ mb: 2 }} />
-                    <Typography variant="subtitle2" gutterBottom>Wygenerowane Linki (Kopia):</Typography>
+                    <Typography variant="subtitle2" gutterBottom>Kopie linków:</Typography>
                     
                     <Stack spacing={1}>
                         {Object.entries(generatedLinks).map(([userId, token]) => {
                             const fullLink = `${joinBaseUrl}?ticket=${token}`;
+                            // Próbujemy znaleźć nazwę usera w opcjach (dla ładniejszego wyświetlania)
+                            // Uwaga: To zadziała tylko dla tych, co byli w 'options' w momencie wysłania.
+                            // Można by mapować userId na username, ale ID też wystarczy dla Hosta.
+                            
                             return (
                                 <Box 
                                     key={userId} 
@@ -104,7 +191,7 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
                                     }}
                                 >
                                     <Box sx={{ overflow: 'hidden', mr: 1 }}>
-                                        <Chip label={userId.substring(0, 8) + "..."} size="small" sx={{ mr: 1 }} />
+                                        <Chip label={`ID: ${userId.substring(0, 5)}...`} size="small" sx={{ mr: 1 }} />
                                         <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
                                             {fullLink.substring(0, 40)}...
                                         </Typography>

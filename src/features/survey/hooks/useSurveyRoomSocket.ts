@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 // Importujemy singleton klienta, który właśnie poprawiliśmy w warstwie API
 import { surveySocket } from '../api/surveySocket'; 
+import { surveyService } from '../api/surveyService';
 // Importujemy typy z rozdzielonego pliku socket.types.ts
 import type { 
     FinalRoomResultDto, 
     UserJoinedSocketMessage, 
     LiveResultUpdateSocketMessage,
-    RoomClosedSocketMessage
+    RoomClosedSocketMessage,
+    SurveySocketMessage
 } from '../model/socket.types'; 
 
 // Importujemy ogólny typ WSMessage (lub Unię Payloadów), który został zdefiniowany w surveySocket.ts
@@ -22,6 +24,7 @@ interface RoomSocketState {
     participantCount: number;
     isRoomOpen: boolean;
     error: string | null;
+    isLoading: boolean;
 }
 
 const initialResults: FinalRoomResultDto = {
@@ -33,87 +36,99 @@ const initialResults: FinalRoomResultDto = {
 // --- HOOK ---
 export const useSurveyRoomSocket = (roomId: string) => {
     const [state, setState] = useState<RoomSocketState>({
-        liveResults: initialResults,
+        liveResults: null,
         participantCount: 0,
         isRoomOpen: true,
         error: null,
+        isLoading: true, 
     });
     
-    // Funkcja do obsługi wiadomości z gniazda. Callback musi przyjmować typ z BaseSocketClient (WSMessage)
+    // 1. POBIERANIE STANU POCZĄTKOWEGO (REST)
+    useEffect(() => {
+        if (!roomId) return;
+
+        const fetchInitialState = async () => {
+            try {
+                const details = await surveyService.getRoomDetails(roomId);
+                setState(prev => ({
+                    ...prev,
+                    participantCount: details.currentParticipants,
+                    isRoomOpen: details.open,
+                    liveResults: details.currentResults, 
+                    isLoading: false 
+                }));
+            } catch (err: any) {
+                console.error("Failed to fetch initial room state", err);
+                setState(prev => ({ ...prev, error: "Failed to load room state", isLoading: false }));
+            }
+        };
+        fetchInitialState();
+    }, [roomId]);
+
+
+    // 2. OBSŁUGA SOCKETÓW
     const handleMessage = useCallback((message: WSMessage) => {
-        // Zakładamy, że message.body zawiera payload i pole 'event'.
-        // Zrzutowujemy go na typ, którego oczekujemy, co jest bezpieczniejsze.
-        const payload = message as SocketPayload & { event: string };
+        const payload = message as SurveySocketMessage; // Używamy unii typów
         
         switch (payload.event) {
             case 'USER_JOINED':
-                const joinPayload = payload as UserJoinedSocketMessage & { event: string };
                 setState(prevState => ({
                     ...prevState,
-                    participantCount: joinPayload.newParticipantCount || prevState.participantCount,
+                    participantCount: payload.newParticipantCount,
                 }));
                 break;
 
             case 'LIVE_RESULTS_UPDATE':
-                const updatePayload = payload as LiveResultUpdateSocketMessage & { event: string };
-                setState(prevState => ({
-                    ...prevState,
-                    liveResults: updatePayload.liveResults,
-                    participantCount: updatePayload.liveResults.totalParticipants || prevState.participantCount,
-                }));
+                // FIX: Sprawdzamy, czy payload.currentResults istnieje!
+                if (payload.currentResults) {
+                    setState(prevState => ({
+                        ...prevState,
+                        liveResults: payload.currentResults,
+                        // Używamy nullish coalescing (??) dla bezpieczeństwa
+                        participantCount: payload.currentResults.totalParticipants ?? prevState.participantCount,
+                    }));
+                }
                 break;
                 
             case 'ROOM_CLOSED':
-                const closedPayload = payload as RoomClosedSocketMessage & { event: string };
                 setState(prevState => ({
                     ...prevState,
                     isRoomOpen: false,
-                    liveResults: closedPayload.finalResults,
+                    liveResults: payload.finalResults,
                 }));
                 break;
                 
             default:
-                console.warn(`Unknown socket event: ${payload.event}`);
+                 // Ignorujemy nieznane eventy
+                 // console.warn(`Unknown socket event: ${(payload as any).event}`);
         }
     }, []);
 
+    // 3. POŁĄCZENIE SOCKETOWE
     useEffect(() => {
         if (!roomId) return;
         
-        // 1. Aktywacja klienta i subskrypcja
-        // Aktywujemy klienta, jeśli nie jest aktywny. Logika automatycznego 
-        // łączenia jest w BaseSocketClient.activate().
         if (!surveySocket.isActive()) {
             surveySocket.activate();
         }
         
         let subscriptionId: string | null = null;
         
-        // Używamy setTimeout, aby dać czas na połączenie STOMP, jeśli nie jest jeszcze aktywne
         const connectAndSubscribeLoop = () => {
             if (surveySocket.isConnected()) {
-                console.log(`Socket connected. Subscribing to room ${roomId}`);
-                
-                // 2. Subskrybuj aktualizacje pokoju i zapisz ID
-                // Używamy metody z BaseSocketClient, która zwraca ID subskrypcji
                 subscriptionId = surveySocket.subscribeToRoomUpdates(roomId, handleMessage);
-                
             } else {
-                // Spróbuj ponownie za chwilę
                 setTimeout(connectAndSubscribeLoop, 1000);
             }
         };
 
         connectAndSubscribeLoop();
 
-        // 3. Zwróć funkcję czyszczącą, która usunie subskrypcję i ewentualnie odłączy klienta
         return () => {
             if (subscriptionId) {
                 surveySocket.unsubscribe(subscriptionId);
             }
-            // Nie deaktywujemy klienta bazowego, bo może być używany przez inne komponenty.
         };
-
     }, [roomId, handleMessage]);
 
     return { ...state };

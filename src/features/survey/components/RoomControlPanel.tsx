@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { 
     Box, 
     Typography, 
-    Paper, 
-    Stack, 
+    Paper,
     CircularProgress, 
-    Alert, 
-    Tooltip
+    Alert,
+    Stack
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
 import { Button } from '@/shared/ui/Button';
 import { surveyService } from '../api/surveyService'; // Używamy serwisu REST
 import { useNavigate } from 'react-router-dom';
@@ -53,9 +51,6 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
         }
     };
 
-    // --- RENDER ---
-    const totalSubmissions = liveResults?.totalSubmissions || 0;
-    const totalParticipants = liveResults?.totalParticipants || 0;
     
     return (
         <Paper elevation={4} sx={{ p: 3, mb: 4 }}>
@@ -72,38 +67,29 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
                     )}
                 </Alert>
             </Box>
-            
-            <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 3 }}>
-                <Tooltip title="Total number of participants who joined the room." arrow>
-                    <Typography>Participants: **{totalParticipants}**</Typography>
-                </Tooltip>
-                <Tooltip title="Total number of successfully submitted surveys." arrow>
-                    <Typography>Submissions: **{totalSubmissions}**</Typography>
-                </Tooltip>
-            </Stack>
-
-            <Box sx={{ mt: 3 }}>
+            <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
                 <Button
                     variant="contained"
                     color="error"
                     size="large"
                     startIcon={isClosing ? <CircularProgress size={20} color="inherit" /> : <CloseIcon />}
                     onClick={handleCloseRoom}
-                    disabled={!isRoomOpen || isClosing} // Można zamknąć tylko otwarty pokój
+                    disabled={!isRoomOpen || isClosing}
+                    sx={{ flex: 1 }} // Opcjonalnie: Rozciągnij przycisk
                 >
-                    {isClosing ? 'Closing Room...' : 'Close Room'}
+                    {isClosing ? 'Closing...' : 'Close Room'}
                 </Button>
                 
-                {/* Opcjonalny przycisk powrotu do listy formularzy */}
                 <Button
                     variant="outlined"
-                    sx={{ ml: 2 }}
+                    size="large"
                     onClick={() => navigate('/survey')}
                     disabled={isClosing}
+                    sx={{ flex: 1 }} // Opcjonalnie: Rozciągnij przycisk
                 >
                     Back to Forms
                 </Button>
-            </Box>
+            </Stack>
             
             {!isRoomOpen && (
                  <Alert severity="info" sx={{ mt: 2 }}>

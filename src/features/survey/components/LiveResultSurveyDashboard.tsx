@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     Box, 
     Typography, 
@@ -8,8 +8,12 @@ import {
     Alert, 
     Card, 
     CardContent,
-    Stack
+    Stack,
+    IconButton,
+    CircularProgress
 } from '@mui/material';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { 
     BarChart, 
     Bar, 
@@ -24,60 +28,119 @@ import { useSurveyRoomSocket } from '../hooks/useSurveyRoomSocket';
 import type { QuestionResultDto } from '../model/socket.types'; 
 import type { QuestionType as RestQuestionType } from '../model/types'; 
 
-// --- STAŁE (bez zmian) ---
+// --- STAŁE ---
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-// --- KOMPONENT WIZUALIZACJI PYTANIA (bez zmian) ---
+// --- KOMPONENT: WIZUALIZATOR TEKSTU (KARUZELA) ---
+const OpenTextVisualizer: React.FC<{ answers: string[] }> = ({ answers }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    if (!answers || answers.length === 0) {
+        return (
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+                No text answers submitted yet.
+            </Typography>
+        );
+    }
+
+    const handleNext = () => {
+        setCurrentIndex((prev) => (prev + 1) % answers.length);
+    };
+
+    const handlePrev = () => {
+        setCurrentIndex((prev) => (prev - 1 + answers.length) % answers.length);
+    };
+
+    return (
+        <Box sx={{ width: '100%', textAlign: 'center' }}>
+            <Paper 
+                elevation={0} 
+                variant="outlined" 
+                sx={{ 
+                    p: 3, 
+                    minHeight: 120, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: 2,
+                    mb: 2
+                }}
+            >
+                <Typography variant="body1" sx={{ fontStyle: 'italic', fontSize: '1.1rem' }}>
+                    "{answers[currentIndex]}"
+                </Typography>
+            </Paper>
+
+            <Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
+                <IconButton onClick={handlePrev} disabled={answers.length <= 1} color="primary">
+                    <ArrowBackIosNewIcon fontSize="small" />
+                </IconButton>
+                
+                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 60, textAlign: 'center' }}>
+                    {currentIndex + 1} of {answers.length}
+                </Typography>
+                
+                <IconButton onClick={handleNext} disabled={answers.length <= 1} color="primary">
+                    <ArrowForwardIosIcon fontSize="small" />
+                </IconButton>
+            </Stack>
+        </Box>
+    );
+};
+
+// --- KOMPONENT: DECYDENT WIZUALIZACJI ---
 interface ChartData {
     name: string;
     count: number;
 }
+
 interface QuestionVizProps {
     result: QuestionResultDto;
 }
+
 const QuestionVisualization: React.FC<QuestionVizProps> = ({ result }) => {
-    // ... (Logika renderowania wykresów bez zmian)
-    const chartData: ChartData[] = Object.entries(result.answerCounts).map(([option, count]) => ({
+    const questionType = result.type as RestQuestionType; 
+
+    // 1. DLA PYTAŃ OTWARTYCH: Używamy Karuzeli
+    if (questionType === 'OPEN_TEXT') {
+        // Bezpiecznie pobieramy listę (nawet jak null to dajemy [])
+        return <OpenTextVisualizer answers={result.openAnswers || []} />;
+    }
+
+    // 2. DLA WYKRESÓW (Single/Multiple Choice)
+    // Bezpiecznie pobieramy mapę (nawet jak null to dajemy {})
+    const counts = result.answerCounts || {};
+
+    const chartData: ChartData[] = Object.entries(counts).map(([option, count]) => ({
         name: option,
         count: count,
     }));
-    const questionType = result.type as RestQuestionType; 
 
-    // 1. WYKRES SŁUPKOWY
-    if (questionType !== 'OPEN_TEXT') {
-        chartData.sort((a, b) => b.count - a.count);
-        return (
-            <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={50} />
-                    <YAxis allowDecimals={false} label={{ value: 'Submissions', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip formatter={(value: number) => [value, 'Votes']} />
-                    <Bar dataKey="count" fill="#8884d8" minPointSize={5}>
-                        {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
-        );
-    } 
-    
-    // 2. WIDOK LISTY
+    // Sortujemy słupki malejąco
+    chartData.sort((a, b) => b.count - a.count);
+
+    if (chartData.length === 0) {
+        return <Typography variant="body2" align="center" sx={{ py: 5 }} color="text.secondary">No votes yet.</Typography>;
+    }
+
     return (
-        <Box sx={{ maxHeight: 250, overflowY: 'auto', p: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Open Answers ({result.openAnswers.length}):</Typography>
-            <Stack spacing={1}>
-                {result.openAnswers.map((answer, index) => (
-                    <Paper key={index} variant="outlined" sx={{ p: 1, backgroundColor: '#f5f5f5' }}>
-                        <Typography variant="body2">{answer}</Typography>
-                    </Paper>
-                ))}
-            </Stack>
-            {result.openAnswers.length === 0 && (
-                <Typography variant="body2" color="text.secondary">No text answers submitted yet.</Typography>
-            )}
-        </Box>
+        <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={60} tick={{fontSize: 12}} />
+                <YAxis allowDecimals={false} />
+                <Tooltip 
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                </Bar>
+            </BarChart>
+        </ResponsiveContainer>
     );
 };
 
@@ -98,45 +161,70 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
     
     // 1. Oczekiwanie na dane
     if (!liveResults) {
-        return <Alert severity="info">Waiting for real-time data or the first submission...</Alert>;
+        return (
+            <Box sx={{ textAlign: 'center', py: 5 }}>
+                <CircularProgress size={30} sx={{ mb: 2 }} />
+                <Typography color="text.secondary">Connecting to live results stream...</Typography>
+            </Box>
+        );
     }
     
-    // 2. Walidacja dla UCZESTNIKA (bez zmian)
+    // 2. Walidacja dla UCZESTNIKA (Blokada podglądu przed wysłaniem)
+    // (Chyba że pokój jest zamknięty - wtedy zazwyczaj wyniki są publiczne, ale to zależy od logiki)
     const isAccessDenied = !isHost && !isParticipantSubmitted && isRoomOpen && liveResults.totalSubmissions === 0;
 
     if (isAccessDenied) {
         return (
-            <Alert severity="info">
-                The survey is live! Submit your answers to view the aggregate results in real-time.
+            <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
+                The survey is live! Please submit your answers to view the results.
             </Alert>
         );
     }
     
     // 3. Render Dashboardu
-    const displayResults = liveResults.results;
+    const displayResults = liveResults.results || [];
 
     return (
         <Box>
-            <Typography variant="h5" sx={{ mb: 2 }}>
-                Live Results Summary
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            
-            <Stack direction="row" spacing={3} sx={{ mb: 4 }}>
-                <Typography variant="body1">Total Participants: **{participantCount}**</Typography>
-                <Typography variant="body1">Total Submissions: **{liveResults.totalSubmissions}**</Typography>
-            </Stack>
+            <Box sx={{ mb: 4, textAlign: 'center' }}>
+                <Typography variant="overline" color="text.secondary" letterSpacing={1}>
+                    Live Statistics
+                </Typography>
+                <Stack 
+                    direction="row" 
+                    spacing={4} 
+                    justifyContent="center" 
+                    divider={<Divider orientation="vertical" flexItem />}
+                    sx={{ mt: 1 }}
+                >
+                    <Box>
+                        <Typography variant="h4" color="primary.main" fontWeight="bold">
+                            {participantCount}
+                        </Typography>
+                        <Typography variant="caption">Participants</Typography>
+                    </Box>
+                    <Box>
+                        <Typography variant="h4" color="secondary.main" fontWeight="bold">
+                            {liveResults.totalSubmissions}
+                        </Typography>
+                        <Typography variant="caption">Submissions</Typography>
+                    </Box>
+                </Stack>
+            </Box>
 
-            <Grid container spacing={4}>
+            <Grid container spacing={3}>
                 {displayResults.map((result, index) => (
-                    // FIX: Używamy składni size={{ ... }}
                     <Grid key={result.questionId} size={{ xs: 12, md: 6 }}>
-                        <Card variant="outlined">
+                        <Card variant="outlined" sx={{ height: '100%', borderRadius: 3 }}>
                             <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    Q{index + 1}: {result.title}
+                                <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ minHeight: 40 }}>
+                                    {index + 1}. {result.title}
                                 </Typography>
+                                <Divider sx={{ mb: 2 }} />
+                                
+                                {/* Tutaj wchodzi albo Wykres, albo nasza nowa Karuzela */}
                                 <QuestionVisualization result={result} />
+                                
                             </CardContent>
                         </Card>
                     </Grid>
@@ -144,7 +232,7 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
             </Grid>
             
             {displayResults.length === 0 && (
-                <Alert severity="info" sx={{ mt: 3 }}>No results received yet.</Alert>
+                <Alert severity="info" sx={{ mt: 3 }}>No questions or results available.</Alert>
             )}
         </Box>
     );

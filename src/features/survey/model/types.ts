@@ -80,7 +80,7 @@ export interface SurveyRoomDetailsResponse {
     roomId: string;
     surveyTitle: string;
     hostId: string;
-    isOpen: boolean;
+    open: boolean;
     isPrivate: boolean;
     currentParticipants: number;
     currentResults: FinalRoomResultDto;

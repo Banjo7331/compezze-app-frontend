@@ -2,6 +2,7 @@ import React from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ThemeProvider } from './ThemeProvider';
 import { SnackbarProvider } from './SnackbarProvider';
+import { NotificationProvider } from './NotificationProvider';
 import { RouterProvider } from './RouterProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -23,11 +24,13 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <QueryClientProvider client={queryClient}>
           <SnackbarProvider>
-            <AuthProvider> 
-              <ThemeProvider>
-                <RouterProvider>{children}</RouterProvider>
-              </ThemeProvider>
-            </AuthProvider>
+            <NotificationProvider>
+              <AuthProvider> 
+                <ThemeProvider>
+                  <RouterProvider>{children}</RouterProvider>
+                </ThemeProvider>
+              </AuthProvider>
+            </NotificationProvider>
           </SnackbarProvider>
         </QueryClientProvider>
       </ErrorBoundary>
