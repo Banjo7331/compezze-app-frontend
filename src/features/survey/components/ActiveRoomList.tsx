@@ -47,7 +47,7 @@ export const ActiveRoomsList = () => {
                         <Button 
                             variant="contained" 
                             color="success"
-                            onClick={() => navigate(`/join/${room.roomId}`)}
+                            onClick={() => navigate(`/survey/join/${room.roomId}`)}
                         >
                             Join
                         </Button>

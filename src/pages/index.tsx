@@ -29,11 +29,20 @@ export const Routing = () => {
           <Route index element={<HomePage />} />
           
           {/* Trasy Ankiet */}
-          <Route path="survey" element={<SurveyPage />} />
-          <Route path="survey/create" element={<SurveyCreatePage />} />
-          
-          {/* NOWE: TRASA ZARZĄDZANIA POKOJEM (HOST VIEW) */}
-          <Route path="survey/room/:roomId" element={<SurveyRoomPage />} />
+          <Route path="survey">
+            {/* /survey - Lista główna */}
+            <Route index element={<SurveyPage />} />
+            
+            {/* /survey/create - Kreator */}
+            <Route path="create" element={<SurveyCreatePage />} />
+            
+            {/* /survey/room/:id - Główny widok pokoju (Host/Participant) */}
+            <Route path="room/:roomId" element={<SurveyRoomPage />} />
+            
+            {/* /survey/join/:id - Alias dla uczestników (ładniejszy URL) */}
+            {/* To nadal renderuje ten sam SurveyRoomPage! */}
+            <Route path="join/:roomId" element={<SurveyRoomPage />} />
+          </Route>
 
           {/* Inne trasy */}
           <Route path="contest" element={<ContestPage />} /> 
@@ -47,9 +56,6 @@ export const Routing = () => {
         {/* Logowanie */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* NOWE: TRASA UCZESTNIKA (PARTICIPANT VIEW) */}
-        {/* Uczestnik nie potrzebuje Navbaru/Autoryzacji, więc jest poza <Layout> */}
-        <Route path="/join/:roomId" element={<SurveyParticipantPage />} /> 
         {/* 2. REJESTRUJEMY TRASĘ TUTAJ */}
         <Route path="/register" element={<RegisterPage />} />
 

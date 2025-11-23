@@ -1,4 +1,3 @@
-// Typ odpowiadający standardowej odpowiedzi Spring Data Page
 export interface Page<T> {
     content: T[];              // Rzeczywista lista elementów
     totalPages: number;        // Całkowita liczba stron

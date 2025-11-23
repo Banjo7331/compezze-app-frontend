@@ -43,6 +43,19 @@ export interface SurveyFormResponse {
     creatorId: string; 
 }
 
+export interface JoinSurveyRoomResponse {
+    participantId: number;
+    survey: SurveyFormStructure;
+    hasSubmitted: boolean;
+    host: boolean;
+}
+
+export interface SurveyFormStructure {
+    id: number;
+    title: string;
+    questions: GetQuestionResponse[];
+}
+
 // Typ pytania w odpowiedzi
 export interface GetQuestionResponse {
     id: number;
