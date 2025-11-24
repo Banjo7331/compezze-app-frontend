@@ -12,6 +12,8 @@ const SurveyPage = lazy(() => import('./survey/SurveyPage'));
 const SurveyCreatePage = lazy(() => import('./survey/SurveyCreatePage'));
 // NOWE: Strony Pokoju
 const SurveyRoomPage = lazy(() => import('./survey/SurveyRoomPage'));
+
+const ProfilePage = lazy(() => import('./user/ProfilePage'));
 const SurveyParticipantPage = lazy(() => import('./survey/SurveyParticipantPage'));
 
 // Placeholderowe komponenty dla innych sekcji
@@ -27,7 +29,7 @@ export const Routing = () => {
         {/* ==================================================== */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
-          
+          <Route path="profile" element={<ProfilePage />} />
           {/* Trasy Ankiet */}
           <Route path="survey">
             {/* /survey - Lista główna */}

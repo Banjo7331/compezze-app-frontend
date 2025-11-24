@@ -1,12 +1,6 @@
 import React, { useState } from 'react'; 
 import { 
-    Box, 
-    Typography, 
-    CircularProgress, 
-    Alert, 
-    Pagination, 
-    Paper, 
-    Stack
+    Box, Typography, CircularProgress, Alert, Pagination, Paper, Stack
 } from '@mui/material';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import { useNavigate } from 'react-router-dom';
@@ -14,41 +8,16 @@ import { Button } from '@/shared/ui/Button';
 import { useUserSurveyForms } from '../hooks/useUserSurveyForms'; 
 import type { SurveyFormResponse, CreateRoomRequest } from '../model/types'; 
 import { surveyService } from '../api/surveyService'; 
+import { useSnackbar } from '@/app/providers/SnackbarProvider';
+import { StartSurveyRoomDialog } from './StartSurveyRoomDialog';
 
 // --- KOMPONENT POJEDYNCZEGO ELEMENTU (KAFLA) ---
 interface SurveyItemProps {
     survey: SurveyFormResponse;
-    onRoomCreateSuccess: (roomId: string) => void; 
+    onStartClick: (id: number) => void; // <-- Teraz rodzic decyduje co robić
 }
 
-const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) => {
-    const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-    
-    // FIX: W widoku listy nie mamy pytań, więc nie możemy sprawdzić ich liczby.
-    // Zakładamy, że formularz jest poprawny.
-    const canLaunch = true;
-    
-    const handleLaunchRoom = async () => {
-        if (isCreatingRoom) return;
-
-        const request: CreateRoomRequest = {
-            // FIX: Używamy surveyFormId zamiast id
-            surveyFormId: survey.surveyFormId as any, 
-            // maxParticipants usunięte (opcjonalne)
-        };
-
-        setIsCreatingRoom(true);
-        try {
-            const result = await surveyService.createRoom(request);
-            onRoomCreateSuccess(result.roomId); 
-        } catch (error) {
-            console.error("Error launching room:", error);
-            alert("Failed to launch the survey room. Check server logs.");
-        } finally {
-            setIsCreatingRoom(false);
-        }
-    };
-    
+const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onStartClick }) => {
     return (
         <Paper 
             elevation={1} 
@@ -66,7 +35,6 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                     {survey.title}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                    {/* FIX: Zamiast licznika pytań (którego nie ma), pokazujemy status */}
                     {survey.isPrivate ? 'Prywatna' : 'Publiczna'}
                 </Typography>
             </Box>
@@ -76,10 +44,9 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
                     size="small" 
                     variant="contained" 
                     color="primary"
-                    disabled={!canLaunch || isCreatingRoom}
-                    onClick={handleLaunchRoom}
+                    onClick={() => onStartClick(survey.surveyFormId)}
                 >
-                    {isCreatingRoom ? <CircularProgress size={20} color="inherit" /> : 'Launch Room'}
+                    Launch Room
                 </Button>
             </Box>
         </Paper>
@@ -91,17 +58,48 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onRoomCreateSuccess }) 
 export const SurveyFormList: React.FC = () => {
     const navigate = useNavigate(); 
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
+    const { showSuccess, showError } = useSnackbar();
     
+    // --- STANY DIALOGU ---
+    const [startDialogOpen, setStartDialogOpen] = useState(false);
+    const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
+
     const { data, isLoading, error, page, totalPages, setPage } = useUserSurveyForms({ refreshTrigger }); 
     
-    const handleRoomCreateSuccess = (roomId: string) => {
-        setRefreshTrigger(prev => prev + 1); 
-        navigate(`/survey/room/${roomId}`);
+    // 1. Otwieranie dialogu
+    const handleOpenStartDialog = (id: number) => {
+        setSelectedFormId(id);
+        setStartDialogOpen(true);
+    };
+
+    // 2. Logika tworzenia pokoju
+    const handleConfirmStart = async (config: { duration: number, maxParticipants: number }) => {
+        if (!selectedFormId) return;
+        
+        setIsStarting(true);
+        try {
+            const request: CreateRoomRequest = {
+                surveyFormId: selectedFormId,
+                maxParticipants: config.maxParticipants,
+                durationMinutes: config.duration
+            };
+            
+            const result = await surveyService.createRoom(request);
+            showSuccess("Pokój utworzony!");
+            navigate(`/survey/room/${result.roomId}`);
+            // Dialog zamknie się przy odmontowaniu (nawigacji)
+        } catch (e) {
+            showError("Błąd podczas tworzenia pokoju.");
+            setIsStarting(false);
+        }
     };
     
     const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value - 1); 
     };
+
+    // --- RENDER ---
 
     if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error">Error loading surveys: {error.message}.</Alert>;
@@ -116,18 +114,13 @@ export const SurveyFormList: React.FC = () => {
     }
 
     return (
-        <Box>
-            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                Twoje Szablony
-            </Typography>
-            
+        <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
             <Stack spacing={1}>
                 {data.map((survey) => (
                     <SurveyItem 
-                        // FIX: Używamy surveyFormId jako klucza
                         key={survey.surveyFormId} 
                         survey={survey} 
-                        onRoomCreateSuccess={handleRoomCreateSuccess}
+                        onStartClick={handleOpenStartDialog} // <-- Przekazujemy handler
                     />
                 ))}
             </Stack>
@@ -142,6 +135,17 @@ export const SurveyFormList: React.FC = () => {
                     />
                 </Box>
             )}
+
+            {/* DIALOG KONFIGURACJI POKOJU */}
+            <StartSurveyRoomDialog 
+                open={startDialogOpen}
+                isLoading={isStarting}
+                onClose={() => {
+                    setStartDialogOpen(false);
+                    setSelectedFormId(null);
+                }}
+                onConfirm={handleConfirmStart}
+            />
         </Box>
     );
 };

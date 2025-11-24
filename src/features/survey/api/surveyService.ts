@@ -1,7 +1,7 @@
 import { apiClient } from '@/shared/api/apiClient';
 // Uzupełnienie typów: CreateRoomRequest nie jest używany w tym serwisie, 
 // ale zakładam, że jest potrzebny. Musimy dodać typ dla paginowanej odpowiedzi.
-import type { CreateSurveyFormRequest, CreateRoomRequest, SurveyFormResponse, RoomResponse, JoinSurveyRoomResponse, SubmitParticipantAnswerRequest, SubmitSurveyAttemptRequest, SurveyRoomDetailsResponse, ActiveRoomResponse } from '../model/types';
+import type { CreateSurveyFormRequest, CreateRoomRequest, SurveyFormResponse, RoomResponse, JoinSurveyRoomResponse, SubmitParticipantAnswerRequest, SubmitSurveyAttemptRequest, SurveyRoomDetailsResponse, ActiveRoomResponse, MySurveyFormDto, MySurveyRoomDto } from '../model/types';
 
 
 // Dodatkowe, generyczne typy dla paginacji (założenia na podstawie Spring Pageable)
@@ -38,6 +38,16 @@ export const surveyService = {
   getAllForms: async (params?: PageableParams) => {
     // Backend: @GetMapping w @RequestMapping("survey/form")
     const response = await apiClient.get<Page<SurveyFormResponse>>('/survey/form', { params });
+    return response.data;
+  },
+
+  getMyForms: async (params: PageableParams) => {
+    const response = await apiClient.get<Page<MySurveyFormDto>>('/survey/form/my', { params });
+    return response.data;
+  },
+
+  getMyRoomsHistory: async (params: PageableParams) => {
+    const response = await apiClient.get<Page<MySurveyRoomDto>>('/survey/room/my', { params });
     return response.data;
   },
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-    Box, Typography, Paper, Button, Divider, Stack, CircularProgress, Alert 
+    Box, Typography, Paper, Divider, Stack, CircularProgress, Alert, IconButton, Tooltip
 } from '@mui/material';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -10,30 +10,53 @@ import { useNavigate } from 'react-router-dom';
 import { useUserSurveyForms } from '../hooks/useUserSurveyForms';
 import { surveyService } from '../api/surveyService';
 import type { CreateRoomRequest } from '../model/types';
+import { Button } from '@/shared/ui/Button';
 
+// Importy dialogów
 import { AllFormsDialog } from './AllFormsDialog';
+import { StartSurveyRoomDialog } from './StartSurveyRoomDialog';
 
 export const FeaturedTemplatesWidget: React.FC = () => {
     const navigate = useNavigate();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    // Pobieramy TYLKO 3 sztuki
+    
+    // Stan dla listy wszystkich
+    const [isAllFormsDialogOpen, setIsAllFormsDialogOpen] = useState(false);
+    
+    // Stan dla startu pokoju
+    const [startDialogOpen, setStartDialogOpen] = useState(false);
+    const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
+    
+    // Dane z API (limit 3)
     const { data, isLoading, error } = useUserSurveyForms({ 
         size: 3, 
-        sort: 'id,desc' // Najnowsze
+        sort: 'id,desc' 
     });
 
-    // Logika Launch Room (skopiowana z SurveyItem, można by wydzielić do hooka, ale tu jest prosto)
-    const handleQuickLaunch = async (id: number) => {
+    // 1. Otwieranie dialogu startu
+    const handleOpenStartDialog = (id: number) => {
+        setSelectedFormId(id);
+        setStartDialogOpen(true);
+    };
+
+    // 2. Logika tworzenia pokoju (po potwierdzeniu w dialogu)
+    const handleConfirmStart = async (config: { duration: number, maxParticipants: number }) => {
+        if (!selectedFormId) return;
+
+        setIsStarting(true);
         try {
             const request: CreateRoomRequest = {
-                surveyFormId: id as any,
-                maxParticipants: 50
+                surveyFormId: selectedFormId,
+                maxParticipants: config.maxParticipants,
+                durationMinutes: config.duration
             };
             const result = await surveyService.createRoom(request);
+            // showSuccess("Pokój uruchomiony!"); // Opcjonalnie
             navigate(`/survey/room/${result.roomId}`);
         } catch (e) {
+            // showError("Nie udało się uruchomić pokoju."); // Opcjonalnie
             alert("Failed to launch room");
+            setIsStarting(false);
         }
     };
 
@@ -54,12 +77,11 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                 </Typography>
 
                 <Stack spacing={2}>
-                    {isLoading && <CircularProgress size={20} />}
-                    {error && <Alert severity="error">Błąd</Alert>}
+                    {isLoading && <CircularProgress size={20} sx={{alignSelf:'center'}} />}
+                    {error && <Alert severity="error">Błąd ładowania</Alert>}
                     
                     {data?.map((survey) => (
                         <Paper 
-                            // FIX: Używamy surveyFormId
                             key={survey.surveyFormId}
                             elevation={1} 
                             sx={{ 
@@ -74,25 +96,25 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                                 <Typography variant="subtitle2" fontWeight="bold" noWrap>
                                     {survey.title}
                                 </Typography>
-                                
-                                {/* FIX: USUNIĘTO LICZNIK PYTAŃ (bo backend go nie zwraca) */}
                                 <Typography variant="caption" color="text.secondary">
                                     {survey.isPrivate ? 'Prywatna' : 'Publiczna'}
                                 </Typography>
                             </Box>
+                            
                             <Button 
                                 size="small" 
+                                variant="contained"
+                                color="success"
                                 startIcon={<PlayArrowIcon />}
-                                // FIX: Przekazujemy surveyFormId
-                                onClick={() => handleQuickLaunch(survey.surveyFormId!)}
-                                sx={{ minWidth: 'auto' }}
+                                onClick={() => handleOpenStartDialog(survey.surveyFormId!)} // <--- ZMIANA
+                                sx={{ minWidth: 'auto', px: 2 }}
                             >
                                 Start
                             </Button>
                         </Paper>
                     ))}
                     
-                    {data?.length === 0 && <Typography variant="caption">Brak szablonów. Utwórz pierwszy!</Typography>}
+                    {data?.length === 0 && <Typography variant="caption" align="center">Brak szablonów.</Typography>}
                 </Stack>
 
                 <Box sx={{ mt: 3, textAlign: 'center' }}>
@@ -100,17 +122,28 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                         variant="outlined" 
                         fullWidth 
                         startIcon={<GridViewIcon />}
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => setIsAllFormsDialogOpen(true)}
                     >
                         Wszystkie Szablony
                     </Button>
                 </Box>
             </Paper>
 
-            {/* MODAL Z PEŁNĄ LISTĄ */}
+            {/* --- DIALOGI --- */}
+            
             <AllFormsDialog 
-                open={isDialogOpen} 
-                onClose={() => setIsDialogOpen(false)} 
+                open={isAllFormsDialogOpen} 
+                onClose={() => setIsAllFormsDialogOpen(false)} 
+            />
+            
+            <StartSurveyRoomDialog 
+                open={startDialogOpen}
+                isLoading={isStarting}
+                onClose={() => {
+                    setStartDialogOpen(false);
+                    setSelectedFormId(null);
+                }}
+                onConfirm={handleConfirmStart}
             />
         </>
     );

@@ -1,94 +1,135 @@
-import React from 'react';
-import { AppBar, Toolbar, Button, Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+    AppBar, Toolbar, Button, Box, Typography, 
+    IconButton, Menu, MenuItem, Avatar, Tooltip,
+    Divider
+} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/features/auth/AuthContext'; // <-- 1. Import Contextu
+import { useAuth } from '@/features/auth/AuthContext'; 
 
 const NavBar: React.FC = () => {
-  // 2. Pobieramy stan i funkcje z Contextu
-  const { isAuthenticated, logout, currentUser } = useAuth();
-  const navigate = useNavigate();
+    const { isAuthenticated, logout, currentUser } = useAuth(); 
+    const navigate = useNavigate();
+    
+    // Stan dla menu użytkownika
+    const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+    const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorElUser(event.currentTarget);
+    };
 
-  const navItems = [
-    { label: 'Contest', path: '/contest' },
-    { label: 'Survey', path: '/survey' },
-    { label: 'Quiz', path: '/quiz' },
-  ];
+    const handleCloseUserMenu = () => {
+        setAnchorElUser(null);
+    };
 
-  return (
-    <AppBar position="static" color="primary">
-      <Toolbar>
-        {/* 1. LOGO */}
-        <Typography
-          variant="h6"
-          component={Link}
-          to="/"
-          sx={{ textDecoration: 'none', color: 'inherit', mr: 4 }}
-        >
-          Compezze Platform
-        </Typography>
+    const handleProfileClick = () => {
+        handleCloseUserMenu();
+        navigate('/profile'); // <-- PRZEKIEROWANIE NA NOWY PROFIL
+    };
 
-        {/* 2. NAWIGACJA GŁÓWNA (ŚRODEK) */}
-        {/* flexGrow: 1 sprawi, że ten Box zajmie dostępne miejsce i pchnie Auth na prawo */}
-        <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
-          {navItems.map((item) => (
-            <Button
-              key={item.label}
-              component={Link}
-              to={item.path}
-              sx={{ 
-                color: '#fff', 
-                textTransform: 'uppercase',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
-              }}
-            >
-              {item.label}
-            </Button>
-          ))}
-        </Box>
+    const handleLogout = () => {
+        handleCloseUserMenu();
+        logout();
+        navigate('/login');
+    };
 
-        {/* 3. SEKCJA AUTORYZACJI (PRAWA STRONA) */}
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {isAuthenticated ? (
-            // WIDOK ZALOGOWANEGO UŻYTKOWNIKA
-            <>
-              <Typography variant="body2" sx={{ mr: 1, fontWeight: 'bold' }}>
-                 {currentUser?.username}
-              </Typography>
-              <Button 
-                color="inherit" 
-                variant="outlined" 
-                onClick={handleLogout}
-                sx={{ borderColor: 'rgba(255,255,255,0.5)' }}
-              >
-                Wyloguj
-              </Button>
-            </>
-          ) : (
-            // WIDOK NIEZALOGOWANEGO (GOŚCIA)
-            <>
-              <Button color="inherit" component={Link} to="/login">
-                Zaloguj
-              </Button>
-              <Button 
-                color="secondary" 
-                variant="contained" 
-                component={Link} 
-                to="/register"
-              >
-                Rejestracja
-              </Button>
-            </>
-          )}
-        </Box>
+    const navItems = [
+        { label: 'Contest', path: '/contest' },
+        { label: 'Survey', path: '/survey' },
+        { label: 'Quiz', path: '/quiz' },
+    ];
 
-      </Toolbar>
-    </AppBar>
-  );
+    return (
+        <AppBar position="static" color="primary">
+            <Toolbar>
+                {/* 1. LOGO */}
+                <Typography
+                    variant="h6"
+                    component={Link}
+                    to="/"
+                    sx={{ textDecoration: 'none', color: 'inherit', mr: 4, fontWeight: 'bold' }}
+                >
+                    Compezze Platform
+                </Typography>
+
+                {/* 2. NAWIGACJA GŁÓWNA */}
+                <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
+                    {navItems.map((item) => (
+                        <Button
+                            key={item.label}
+                            component={Link}
+                            to={item.path}
+                            sx={{ 
+                                color: '#fff', 
+                                textTransform: 'uppercase',
+                                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+                            }}
+                        >
+                            {item.label}
+                        </Button>
+                    ))}
+                </Box>
+
+                {/* 3. SEKCJA UŻYTKOWNIKA (Dropdown) */}
+                <Box sx={{ flexGrow: 0 }}>
+                    {isAuthenticated ? (
+                        <>
+                            <Tooltip title="Otwórz ustawienia">
+                                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                    <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                                        <PersonIcon />
+                                    </Avatar>
+                                </IconButton>
+                            </Tooltip>
+                            
+                            <Menu
+                                sx={{ mt: '45px' }}
+                                id="menu-appbar"
+                                anchorEl={anchorElUser}
+                                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                keepMounted
+                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
+                            >
+                                <MenuItem disabled>
+                                    <Typography textAlign="center" variant="caption">
+                                        Zalogowany jako: <strong>{currentUser?.username}</strong>
+                                    </Typography>
+                                </MenuItem>
+                                
+                                <Divider />
+                                
+                                {/* --- LINK DO PROFILU --- */}
+                                <MenuItem onClick={handleProfileClick}>
+                                    <Typography textAlign="center">Mój Profil</Typography>
+                                </MenuItem>
+                                
+                                <MenuItem onClick={handleLogout}>
+                                    <Typography textAlign="center" color="error">Wyloguj</Typography>
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button color="inherit" component={Link} to="/login">
+                                Zaloguj
+                            </Button>
+                            <Button 
+                                color="secondary" 
+                                variant="contained" 
+                                component={Link} 
+                                to="/register"
+                            >
+                                Rejestracja
+                            </Button>
+                        </Box>
+                    )}
+                </Box>
+            </Toolbar>
+        </AppBar>
+    );
 };
 
 export default NavBar;

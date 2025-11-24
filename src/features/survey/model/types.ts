@@ -31,6 +31,7 @@ export interface CreateSurveyFormRequest {
 export interface CreateRoomRequest {
     surveyFormId: number; 
     maxParticipants?: number;
+    durationMinutes?: number;
 }
 
 // --- RESPONSE DTOs ---
@@ -89,6 +90,25 @@ export interface SurveyRoomDetailsResponse {
 export interface SubmitParticipantAnswerRequest {
     questionId: number; // Long -> number
     answers: string[];  // List<String> -> string[]
+}
+
+export interface MySurveyFormDto {
+    id: number;
+    title: string;
+    isPrivate: boolean;
+    createdAt: string; 
+    questionsCount: number;
+}
+
+export interface MySurveyRoomDto {
+    roomId: string;
+    surveyTitle: string;
+    isOpen: boolean;
+    isPrivate: boolean;
+    createdAt: string;
+    validUntil?: string;
+    totalParticipants: number;
+    totalSubmissions: number;
 }
 
 export interface SubmitSurveyAttemptRequest {
