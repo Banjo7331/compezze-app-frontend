@@ -10,15 +10,20 @@ const RegisterPage = lazy(() => import('./auth/RegisterPage'));
 // --- Trasy Survey ---
 const SurveyPage = lazy(() => import('./survey/SurveyPage'));
 const SurveyCreatePage = lazy(() => import('./survey/SurveyCreatePage'));
-// NOWE: Strony Pokoju
 const SurveyRoomPage = lazy(() => import('./survey/SurveyRoomPage'));
-
-const ProfilePage = lazy(() => import('./user/ProfilePage'));
 const SurveyParticipantPage = lazy(() => import('./survey/SurveyParticipantPage'));
 
+const QuizPage = lazy(() => import('./quiz/QuizPage')); // Strona Główna Quizów
+// Pamiętaj, żeby stworzyć plik QuizCreatePage.tsx (wrapper na QuizCreateForm)
+// Jeśli jeszcze go nie masz, możesz tymczasowo wstawić placeholder lub sam formularz.
+const QuizCreatePage = lazy(() => import('./quiz/QuizCreatePage')); 
+const QuizRoomPage = lazy(() => import('./quiz/QuizRoomPage'));
+
+const ProfilePage = lazy(() => import('./user/ProfilePage'));
+
+
 // Placeholderowe komponenty dla innych sekcji
-const ContestPage = () => <div>Contest Page (TODO)</div>; 
-const QuizPage = () => <div>Quiz Page (TODO)</div>;       
+const ContestPage = () => <div>Contest Page (TODO)</div>;
 
 export const Routing = () => {
   return (
@@ -48,7 +53,19 @@ export const Routing = () => {
 
           {/* Inne trasy */}
           <Route path="contest" element={<ContestPage />} /> 
-          <Route path="quiz" element={<QuizPage />} />
+          <Route path="quiz">
+            {/* /quiz - Centrum Quizów */}
+            <Route index element={<QuizPage />} />
+            
+            {/* /quiz/create - Kreator */}
+            <Route path="create" element={<QuizCreatePage />} />
+            
+            {/* /quiz/room/:id - Gra (Host/Gracz) */}
+            <Route path="room/:roomId" element={<QuizRoomPage />} />
+            
+            {/* /quiz/join/:id - Alias dołączania */}
+            <Route path="join/:roomId" element={<QuizRoomPage />} />
+          </Route>
         </Route>
 
         {/* ==================================================== */}
