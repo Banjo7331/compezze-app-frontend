@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { quizSocket } from '../api/quizSocket';
 import { quizService } from '../api/quizService';
 import { 
@@ -13,17 +13,22 @@ import {
 } from '../model/socket.types';
 import { QuizRoomStatus, type WSMessage } from '../model/types';
 
-// Stan lokalny gry
+// FIX 1: Definiujemy typ opcji z ID (zgodnie z backendem)
+export interface SocketOptionDto {
+    id: number;
+    text: string;
+}
+
 interface QuizRoomState {
     status: QuizRoomStatus;
     currentQuestion: {
         index: number;
         title: string;
-        options: string[];
+        options: SocketOptionDto[]; // <--- FIX 2: Zmiana z string[] na obiektową
         timeLimit: number;
-        endTime: number; // Timestamp kiedy koniec
+        endTime: number;
     } | null;
-    correctOptionId: number | null; // Do wyświetlenia po czasie
+    correctOptionId: number | null;
     leaderboard: LeaderboardEntryDto[];
     finalResults: FinalRoomResultDto | null;
     
@@ -37,55 +42,91 @@ export const useQuizRoomSocket = (roomId: string) => {
         status: QuizRoomStatus.LOBBY,
         currentQuestion: null,
         correctOptionId: null,
-        leaderboard: [], // Tu trzymamy listę graczy (w Lobby i w Grze)
+        leaderboard: [],
         finalResults: null,
         participantsCount: 0,
         error: null,
         isLoading: true,
     });
 
-    // 1. REST Snapshot (Stan początkowy)
+    const isMounted = useRef(false);
+
+    // 1. REST Snapshot
     useEffect(() => {
+        isMounted.current = true;
         if (!roomId) return;
+
         const fetchState = async () => {
             try {
                 const details = await quizService.getRoomDetails(roomId);
                 
-                setState(prev => ({
-                    ...prev,
-                    status: details.status,
-                    participantsCount: details.currentParticipants,
-                    // Backend w 'currentResults.leaderboard' zwraca listę graczy (nawet jak mają 0 pkt)
-                    leaderboard: details.currentResults?.leaderboard || [], 
-                    isLoading: false 
-                }));
+                if (isMounted.current) {
+                    // FIX 3: Mapowanie stanu początkowego pytania (jeśli gra trwa po odświeżeniu)
+                    let initialQuestion = null;
+                    if (details.currentQuestion) {
+                         const q = details.currentQuestion;
+                         // Konwersja daty ISO na timestamp
+                         const endTime = new Date(q.startTime).getTime() + (q.timeLimitSeconds * 1000);
+                         
+                         initialQuestion = {
+                             index: q.questionIndex,
+                             title: q.title,
+                             options: q.options, // To musi być {id, text}[]
+                             timeLimit: q.timeLimitSeconds,
+                             endTime: endTime
+                         };
+                    }
+
+                    setState(prev => ({
+                        ...prev,
+                        status: details.status,
+                        participantsCount: details.currentParticipants,
+                        leaderboard: details.currentResults?.leaderboard || [], 
+                        currentQuestion: initialQuestion, // <--- Ustawiamy pytanie
+                        isLoading: false 
+                    }));
+                }
             } catch (e) {
-                setState(prev => ({ ...prev, error: "Błąd pobierania pokoju", isLoading: false }));
+                if (isMounted.current) {
+                    setState(prev => ({ ...prev, error: "Błąd pobierania pokoju", isLoading: false }));
+                }
             }
         };
         fetchState();
+        
+        return () => { isMounted.current = false; };
     }, [roomId]);
 
     // 2. WebSocket Handler
     const handleMessage = useCallback((message: WSMessage) => {
         const payload = message as QuizSocketMessage;
+        console.log("🎮 Quiz Event:", payload.event, payload);
 
         switch (payload.event) {
             case 'USER_JOINED':
-                // FIX: Dodajemy nowego gracza do listy lokalnie!
-                setState(prev => ({
-                    ...prev,
-                    participantsCount: payload.newParticipantCount,
-                    leaderboard: [
-                        ...prev.leaderboard, 
-                        { 
-                            userId: payload.userId, 
-                            nickname: payload.username, 
-                            score: 0, 
-                            rank: 0 
-                        }
-                    ]
-                }));
+                setState(prev => {
+                    const pMsg = payload as QuizUserJoinedMessage;
+                    // Idempotentność: unikamy duplikatów na liście
+                    const exists = prev.leaderboard.some(u => u.userId === pMsg.userId);
+                    
+                    if (exists) {
+                        return { ...prev, participantsCount: pMsg.newParticipantCount };
+                    }
+
+                    return {
+                        ...prev,
+                        participantsCount: pMsg.newParticipantCount,
+                        leaderboard: [
+                            ...prev.leaderboard, 
+                            { 
+                                userId: pMsg.userId, 
+                                nickname: pMsg.username, 
+                                score: 0, 
+                                rank: 0 
+                            }
+                        ]
+                    };
+                });
                 break;
 
             case 'QUIZ_STARTED':
@@ -100,11 +141,13 @@ export const useQuizRoomSocket = (roomId: string) => {
                 setState(prev => ({
                     ...prev,
                     status: QuizRoomStatus.QUESTION_ACTIVE,
-                    correctOptionId: null, // Resetujemy widok poprawnej
+                    correctOptionId: null,
                     currentQuestion: {
                         index: qMsg.questionIndex,
                         title: qMsg.title,
-                        options: qMsg.options,
+                        // FIX 4: Rzutowanie opcji, zakładając że backend wysyła obiekty {id, text}
+                        // Jeśli w DTO TS masz string[], zmień DTO w socket.types.ts!
+                        options: qMsg.options as unknown as SocketOptionDto[], 
                         timeLimit: qMsg.timeLimitSeconds,
                         endTime: endTime
                     }
@@ -139,23 +182,33 @@ export const useQuizRoomSocket = (roomId: string) => {
         }
     }, []);
 
-    // 3. Connect Loop
+    // 3. Connection Loop
     useEffect(() => {
         if (!roomId) return;
-        if (!quizSocket.isActive()) quizSocket.activate();
+        
+        // Layout zarządza activate(), ale check nie zaszkodzi
+        // if (!quizSocket.isActive()) quizSocket.activate();
 
-        let subId: string | null = null;
+        let subscriptionId: string | null = null;
+        let timeoutId: any;
+
         const connectLoop = () => {
+            if (!isMounted.current) return;
+
             if (quizSocket.isConnected()) {
-                subId = quizSocket.subscribeToRoomUpdates(roomId, handleMessage);
+                subscriptionId = quizSocket.subscribeToRoomUpdates(roomId, handleMessage);
             } else {
-                setTimeout(connectLoop, 500);
+                timeoutId = setTimeout(connectLoop, 500);
             }
         };
+        
         connectLoop();
 
         return () => {
-            if (subId) quizSocket.unsubscribe(subId);
+            clearTimeout(timeoutId);
+            if (subscriptionId) {
+                quizSocket.unsubscribe(subscriptionId);
+            }
         };
     }, [roomId, handleMessage]);
 

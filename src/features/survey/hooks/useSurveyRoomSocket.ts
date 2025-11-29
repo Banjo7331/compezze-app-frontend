@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-// Importujemy singleton klienta, który właśnie poprawiliśmy w warstwie API
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { surveySocket } from '../api/surveySocket'; 
 import { surveyService } from '../api/surveyService';
-// Importujemy typy z rozdzielonego pliku socket.types.ts
 import type { 
     FinalRoomResultDto, 
     UserJoinedSocketMessage, 
@@ -10,15 +8,8 @@ import type {
     RoomClosedSocketMessage,
     SurveySocketMessage
 } from '../model/socket.types'; 
-
-// Importujemy ogólny typ WSMessage (lub Unię Payloadów), który został zdefiniowany w surveySocket.ts
 import type { WSMessage } from '../model/types'; 
 
-// Ustalenie, jaki typ wiadomości jest wysyłany z backendu (Payload + pole 'event')
-// W Javie wysyłany jest payload z dodanym polem, dlatego musimy to uwzględnić w TS.
-type SocketPayload = UserJoinedSocketMessage | LiveResultUpdateSocketMessage | RoomClosedSocketMessage;
-
-// --- TYPY STANOWE ---
 interface RoomSocketState {
     liveResults: FinalRoomResultDto | null;
     participantCount: number;
@@ -27,13 +18,6 @@ interface RoomSocketState {
     isLoading: boolean;
 }
 
-const initialResults: FinalRoomResultDto = {
-    totalParticipants: 0,
-    totalSubmissions: 0,
-    results: [],
-};
-
-// --- HOOK ---
 export const useSurveyRoomSocket = (roomId: string) => {
     const [state, setState] = useState<RoomSocketState>({
         liveResults: null,
@@ -43,32 +27,42 @@ export const useSurveyRoomSocket = (roomId: string) => {
         isLoading: true, 
     });
     
+    // Ref do śledzenia montowania (dla Strict Mode)
+    const isMounted = useRef(false);
+
     // 1. POBIERANIE STANU POCZĄTKOWEGO (REST)
     useEffect(() => {
+        isMounted.current = true;
         if (!roomId) return;
 
         const fetchInitialState = async () => {
             try {
                 const details = await surveyService.getRoomDetails(roomId);
-                setState(prev => ({
-                    ...prev,
-                    participantCount: details.currentParticipants,
-                    isRoomOpen: details.open,
-                    liveResults: details.currentResults, 
-                    isLoading: false 
-                }));
+                if (isMounted.current) {
+                    setState(prev => ({
+                        ...prev,
+                        participantCount: details.currentParticipants,
+                        isRoomOpen: details.open,
+                        liveResults: details.currentResults, 
+                        isLoading: false 
+                    }));
+                }
             } catch (err: any) {
                 console.error("Failed to fetch initial room state", err);
-                setState(prev => ({ ...prev, error: "Failed to load room state", isLoading: false }));
+                if (isMounted.current) {
+                    setState(prev => ({ ...prev, error: "Failed to load room state", isLoading: false }));
+                }
             }
         };
         fetchInitialState();
+        
+        return () => { isMounted.current = false; };
     }, [roomId]);
 
 
     // 2. OBSŁUGA SOCKETÓW
     const handleMessage = useCallback((message: WSMessage) => {
-        const payload = message as SurveySocketMessage; // Używamy unii typów
+        const payload = message as SurveySocketMessage;
         
         switch (payload.event) {
             case 'USER_JOINED':
@@ -79,12 +73,11 @@ export const useSurveyRoomSocket = (roomId: string) => {
                 break;
 
             case 'LIVE_RESULTS_UPDATE':
-                // FIX: Sprawdzamy, czy payload.currentResults istnieje!
                 if (payload.currentResults) {
                     setState(prevState => ({
                         ...prevState,
                         liveResults: payload.currentResults,
-                        // Używamy nullish coalescing (??) dla bezpieczeństwa
+                        // Nullish coalescing dla bezpieczeństwa
                         participantCount: payload.currentResults.totalParticipants ?? prevState.participantCount,
                     }));
                 }
@@ -97,37 +90,38 @@ export const useSurveyRoomSocket = (roomId: string) => {
                     liveResults: payload.finalResults,
                 }));
                 break;
-                
-            default:
-                 // Ignorujemy nieznane eventy
-                 // console.warn(`Unknown socket event: ${(payload as any).event}`);
         }
     }, []);
 
-    // 3. POŁĄCZENIE SOCKETOWE
     useEffect(() => {
         if (!roomId) return;
         
-        if (!surveySocket.isActive()) {
-            surveySocket.activate();
-        }
-        
+        // NIE robimy tutaj surveySocket.activate(), bo Layout.tsx to robi.
+        // Ale dla bezpieczeństwa (jeśli komponent użyty poza layoutem) można dodać check:
+        if (!surveySocket.isActive()) surveySocket.activate();
+
         let subscriptionId: string | null = null;
+        let timeoutId: any;
         
-        const connectAndSubscribeLoop = () => {
+        const connectLoop = () => {
+            // Jeśli komponent odmontowany, przerywamy pętlę retry
+            if (!isMounted.current) return;
+
             if (surveySocket.isConnected()) {
                 subscriptionId = surveySocket.subscribeToRoomUpdates(roomId, handleMessage);
             } else {
-                setTimeout(connectAndSubscribeLoop, 1000);
+                timeoutId = setTimeout(connectLoop, 1000);
             }
         };
 
-        connectAndSubscribeLoop();
+        connectLoop();
 
         return () => {
+            clearTimeout(timeoutId); // Ważne: czyścimy timeout
             if (subscriptionId) {
                 surveySocket.unsubscribe(subscriptionId);
             }
+            // NIE robimy deactivate()
         };
     }, [roomId, handleMessage]);
 

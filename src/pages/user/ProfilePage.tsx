@@ -11,6 +11,9 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import { MyTemplatesList } from '@/features/survey/components/MyTemplatesList';
 import { MySurveyRoomHistory } from '@/features/survey/components/MySurveyRoomHistory';
 
+import { MyQuizTemplatesList } from '@/features/quiz/components/MyQuizTemplatesList'; // <--- DODAJ
+import { MyQuizHistory } from '@/features/quiz/components/MyQuizHistory';
+
 // Placeholder dla ustawień konta (na przyszłość)
 const AccountSettings = () => (
     <Box>
@@ -48,8 +51,8 @@ export const ProfilePage: React.FC = () => {
                 >
                     <Tab icon={<AccountCircleIcon />} label="Konto" iconPosition="start" />
                     <Tab icon={<PollIcon />} label="Ankiety" iconPosition="start" />
+                    <Tab icon={<QuizIcon />} label="Quizy" iconPosition="start" />
                     <Tab icon={<EmojiEventsIcon />} label="Konkursy" iconPosition="start" disabled />
-                    <Tab icon={<QuizIcon />} label="Quizy" iconPosition="start" disabled />
                 </Tabs>
 
                 {/* TREŚĆ */}
@@ -85,8 +88,29 @@ export const ProfilePage: React.FC = () => {
                         </Box>
                     )}
 
+                    {tabValue === 2 && (
+                        <Box>
+                            <Typography variant="h5" gutterBottom sx={{ color: 'text.primary' }}>
+                                Moje Quizy
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                Zarządzaj swoimi grami i uruchamiaj nowe sesje.
+                            </Typography>
+                            
+                            <MyQuizTemplatesList />
+
+                            <Divider sx={{ my: 4 }} />
+                            
+                            <Typography variant="h5" gutterBottom sx={{ color: 'text.primary' }}>
+                                Historia Gier
+                            </Typography>
+                            
+                            <MyQuizHistory />
+                        </Box>
+                    )}
+
                     {/* ZAKŁADKI 2 i 3: Placeholder */}
-                    {tabValue > 1 && (
+                    {tabValue > 2 && (
                         <Box sx={{ textAlign: 'center', mt: 4 }}>
                             <Typography variant="h6" color="text.disabled">Moduł w trakcie budowy...</Typography>
                         </Box>

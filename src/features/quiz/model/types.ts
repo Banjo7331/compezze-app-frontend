@@ -84,19 +84,32 @@ export interface JoinQuizRoomResponse {
     };
 }
 
-// Detale pokoju (np. przy odświeżeniu strony)
+export interface GetQuestionOptionResponse {
+    id: number;
+    text: string;
+}
+
+export interface GetCurrentQuestionResponse {
+    questionId: number;
+    questionIndex: number;
+    title: string;
+    timeLimitSeconds: number;
+    startTime: string; 
+    options: GetQuestionOptionResponse[];
+}
+
 export interface GetQuizRoomDetailsResponse {
     roomId: string;
     quizTitle: string;
     hostId: string;
-    isOpen: boolean; // Wyliczone (status != FINISHED)
+    isOpen: boolean;
     status: QuizRoomStatus;
     isPrivate: boolean;
     currentParticipants: number;
-    currentResults: FinalRoomResultDto; // Ranking
+    currentResults: FinalRoomResultDto;
+    currentQuestion?: GetCurrentQuestionResponse;
 }
 
-// Lista "Historia Sesji"
 export interface MyQuizRoomDto {
     roomId: string;
     quizTitle: string;

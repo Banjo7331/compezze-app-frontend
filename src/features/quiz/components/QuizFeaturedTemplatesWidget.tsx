@@ -11,8 +11,9 @@ import { quizService } from '../api/quizService';
 import type { MyQuizFormDto, CreateQuizRoomRequest } from '../model/types';
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
 
-// Jeśli chcesz modal z listą wszystkich, musisz go stworzyć (AllQuizFormsDialog)
-// import { AllQuizFormsDialog } from './AllQuizFormsDialog'; 
+// Importy Dialogów
+import { AllQuizFormsDialog } from './AllQuizFormsDialog';
+import { StartQuizRoomDialog } from './StartQuizRoomDialog'; // <--- NOWY IMPORT (Stwórz ten plik!)
 
 export const QuizFeaturedTemplatesWidget: React.FC = () => {
     const navigate = useNavigate();
@@ -20,6 +21,11 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
     
     const [forms, setForms] = useState<MyQuizFormDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Stany dla Dialogów
+    const [isAllFormsDialogOpen, setIsAllFormsDialogOpen] = useState(false); // <--- TO DODAŁEM
+    const [startDialogOpen, setStartDialogOpen] = useState(false);
+    const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
     // Pobieramy 3 ostatnie quizy
@@ -37,28 +43,30 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
         fetchForms();
     }, []);
 
-    // Szybki Start (Bez pytania o czas, bo w Quizie jest on w pytaniach/TTL)
-    const handleQuickLaunch = async (id: number) => {
-        if (isStarting) return;
-        
-        if (!window.confirm("Czy chcesz uruchomić nową grę (Lobby)?")) return;
+    // Otwieranie dialogu startu (zamiast natychmiastowego startu)
+    const handleOpenStartDialog = (id: number) => {
+        setSelectedFormId(id);
+        setStartDialogOpen(true);
+    };
+
+    // Potwierdzenie startu (z dialogu)
+    const handleConfirmStart = async (config: { maxParticipants: number }) => {
+        if (!selectedFormId) return;
 
         setIsStarting(true);
         try {
             const request: CreateQuizRoomRequest = {
-                quizFormId: id,
-                maxParticipants: 100, // Domyślny limit na szybki start
-                isPrivate: false      // Domyślnie publiczny przy szybkim starcie
+                quizFormId: selectedFormId,
+                maxParticipants: config.maxParticipants,
+                isPrivate: false      
             };
             
             const result = await quizService.createRoom(request);
             showSuccess("Lobby utworzone!");
-            // Przekierowanie do pokoju (gdzie user zostanie hostem)
             navigate(`/quiz/room/${result.roomId}`);
             
         } catch (e) {
             showError("Nie udało się utworzyć gry.");
-        } finally {
             setIsStarting(false);
         }
     };
@@ -108,8 +116,7 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
                                 variant="contained"
                                 color="warning"
                                 startIcon={<PlayArrowIcon />}
-                                onClick={() => handleQuickLaunch(quiz.id)}
-                                disabled={isStarting}
+                                onClick={() => handleOpenStartDialog(quiz.id)} // <--- ZMIANA
                                 sx={{ minWidth: 'auto', px: 2 }}
                             >
                                 GRAJ
@@ -130,12 +137,32 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
                         color="warning"
                         fullWidth 
                         startIcon={<GridViewIcon />}
-                        onClick={() => navigate('/profile')} // Przekierowanie do profilu zamiast dialogu
+                        // ZMIANA: Otwieramy Dialog zamiast nawigacji
+                        onClick={() => setIsAllFormsDialogOpen(true)} 
                     >
                         Wszystkie Quizy
                     </Button>
                 </Box>
             </Paper>
+
+            {/* --- DIALOGI --- */}
+            
+            {/* Modal z pełną listą (Feed) */}
+            <AllQuizFormsDialog 
+                open={isAllFormsDialogOpen} 
+                onClose={() => setIsAllFormsDialogOpen(false)} 
+            />
+            
+            {/* Modal konfiguracji nowej gry */}
+            <StartQuizRoomDialog 
+                open={startDialogOpen}
+                isLoading={isStarting}
+                onClose={() => {
+                    setStartDialogOpen(false);
+                    setSelectedFormId(null);
+                }}
+                onConfirm={handleConfirmStart}
+            />
         </>
     );
 };
