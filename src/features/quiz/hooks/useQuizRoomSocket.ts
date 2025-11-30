@@ -13,7 +13,7 @@ import {
 } from '../model/socket.types';
 import { QuizRoomStatus, type WSMessage } from '../model/types';
 
-// FIX 1: Definiujemy typ opcji z ID (zgodnie z backendem)
+// Definicja typu opcji przychodzącej z Backendu (musi mieć id!)
 export interface SocketOptionDto {
     id: number;
     text: string;
@@ -22,9 +22,10 @@ export interface SocketOptionDto {
 interface QuizRoomState {
     status: QuizRoomStatus;
     currentQuestion: {
+        questionId: number;
         index: number;
         title: string;
-        options: SocketOptionDto[]; // <--- FIX 2: Zmiana z string[] na obiektową
+        options: SocketOptionDto[]; // <--- Poprawiony typ
         timeLimit: number;
         endTime: number;
     } | null;
@@ -51,7 +52,7 @@ export const useQuizRoomSocket = (roomId: string) => {
 
     const isMounted = useRef(false);
 
-    // 1. REST Snapshot
+    // 1. REST Snapshot (Przy wejściu/odświeżeniu)
     useEffect(() => {
         isMounted.current = true;
         if (!roomId) return;
@@ -61,17 +62,26 @@ export const useQuizRoomSocket = (roomId: string) => {
                 const details = await quizService.getRoomDetails(roomId);
                 
                 if (isMounted.current) {
-                    // FIX 3: Mapowanie stanu początkowego pytania (jeśli gra trwa po odświeżeniu)
+                    
+                    // Mapowanie Leadborardu (zabezpieczenie przed null/username vs nickname)
+                    const mappedLeaderboard = details.currentResults?.leaderboard?.map((entry: any) => ({
+                        userId: entry.userId,
+                        nickname: entry.username || entry.nickname || "Unknown",
+                        score: entry.score,
+                        rank: entry.rank
+                    })) || [];
+
+                    // Mapowanie Pytania (jeśli gra trwa)
                     let initialQuestion = null;
                     if (details.currentQuestion) {
                          const q = details.currentQuestion;
-                         // Konwersja daty ISO na timestamp
                          const endTime = new Date(q.startTime).getTime() + (q.timeLimitSeconds * 1000);
                          
                          initialQuestion = {
+                            questionId: q.questionId,
                              index: q.questionIndex,
                              title: q.title,
-                             options: q.options, // To musi być {id, text}[]
+                             options: q.options as unknown as SocketOptionDto[], // Rzutowanie
                              timeLimit: q.timeLimitSeconds,
                              endTime: endTime
                          };
@@ -81,8 +91,9 @@ export const useQuizRoomSocket = (roomId: string) => {
                         ...prev,
                         status: details.status,
                         participantsCount: details.currentParticipants,
-                        leaderboard: details.currentResults?.leaderboard || [], 
-                        currentQuestion: initialQuestion, // <--- Ustawiamy pytanie
+                        leaderboard: mappedLeaderboard, 
+                        finalResults: details.currentResults, 
+                        currentQuestion: initialQuestion, 
                         isLoading: false 
                     }));
                 }
@@ -97,7 +108,8 @@ export const useQuizRoomSocket = (roomId: string) => {
         return () => { isMounted.current = false; };
     }, [roomId]);
 
-    // 2. WebSocket Handler
+
+    // 2. WebSocket Handler (Aktualizacje na żywo)
     const handleMessage = useCallback((message: WSMessage) => {
         const payload = message as QuizSocketMessage;
         console.log("🎮 Quiz Event:", payload.event, payload);
@@ -106,7 +118,7 @@ export const useQuizRoomSocket = (roomId: string) => {
             case 'USER_JOINED':
                 setState(prev => {
                     const pMsg = payload as QuizUserJoinedMessage;
-                    // Idempotentność: unikamy duplikatów na liście
+                    // Idempotentność (unikamy duplikatów w liście)
                     const exists = prev.leaderboard.some(u => u.userId === pMsg.userId);
                     
                     if (exists) {
@@ -143,10 +155,10 @@ export const useQuizRoomSocket = (roomId: string) => {
                     status: QuizRoomStatus.QUESTION_ACTIVE,
                     correctOptionId: null,
                     currentQuestion: {
+                        questionId: qMsg.questionId,
                         index: qMsg.questionIndex,
                         title: qMsg.title,
-                        // FIX 4: Rzutowanie opcji, zakładając że backend wysyła obiekty {id, text}
-                        // Jeśli w DTO TS masz string[], zmień DTO w socket.types.ts!
+                        // Tutaj rzutujemy na SocketOptionDto[] (backend musi wysyłać ID!)
                         options: qMsg.options as unknown as SocketOptionDto[], 
                         timeLimit: qMsg.timeLimitSeconds,
                         endTime: endTime
@@ -182,7 +194,7 @@ export const useQuizRoomSocket = (roomId: string) => {
         }
     }, []);
 
-    // 3. Connection Loop
+    // 3. Connection Loop (Bezpieczny)
     useEffect(() => {
         if (!roomId) return;
         
@@ -190,7 +202,7 @@ export const useQuizRoomSocket = (roomId: string) => {
         // if (!quizSocket.isActive()) quizSocket.activate();
 
         let subscriptionId: string | null = null;
-        let timeoutId: any;
+        let timeoutId: any; // 'any' dla timeoutu w przeglądarce
 
         const connectLoop = () => {
             if (!isMounted.current) return;

@@ -53,6 +53,10 @@ const QuizRoomPage: React.FC = () => {
                     setIsHost(true);
                     setIsJoined(true);
                 }
+                else if (details.participant){
+                    console.log("Wykryto powracającego Gracza.");
+                    setIsJoined(true);
+                }
             } catch (e) {
                 console.error("Błąd inicjalizacji pokoju", e);
                 setJoinError("Nie udało się załadować pokoju.");
@@ -97,6 +101,11 @@ const QuizRoomPage: React.FC = () => {
             await quizService.closeRoom(roomId);
         }
     };
+
+    const handleFinishQuestionManually = async () => {
+        if (!roomId) return;
+        await quizService.finishQuestionManually(roomId);
+    };
     
     const handleNextQuestion = async () => {
         if (!roomId) return;
@@ -105,9 +114,7 @@ const QuizRoomPage: React.FC = () => {
 
     const handleSubmitAnswer = async (optionId: number) => {
         if (!roomId || !currentQuestion) return;
-        // @ts-ignore (questionId z backendu)
-        const qId = currentQuestion.questionId || currentQuestion.id; 
-        if(qId) await quizService.submitAnswer(roomId, qId, optionId);
+        await quizService.submitAnswer(roomId, currentQuestion.questionId, optionId);
     };
 
     // --- RENDEROWANIE ---
@@ -189,6 +196,7 @@ const QuizRoomPage: React.FC = () => {
                     question={currentQuestion as any} 
                     isHost={isHost}
                     onSubmitAnswer={handleSubmitAnswer}
+                    onFinishEarly={handleFinishQuestionManually} // <--- PODPIĘCIE
                 />
             )}
 
@@ -208,7 +216,7 @@ const QuizRoomPage: React.FC = () => {
                     isHost={isHost}
                     leaderboard={finalResults?.leaderboard || leaderboard || []}
                     onNext={() => {}}
-                    onClose={() => navigate('/profile')}
+                    onClose={() => navigate('/quiz')}
                 />
             )}
 

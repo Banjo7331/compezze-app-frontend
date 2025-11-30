@@ -9,13 +9,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import TimerIcon from '@mui/icons-material/Timer';
-import StarIcon from '@mui/icons-material/Star';
+import StarIcon from '@mui/icons-material/Star'; // Zostawiamy tylko gwiazdkę (punkty)
 
 import { Button } from '@/shared/ui/Button'; 
 import { quizService } from '../api/quizService'; 
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
 import { QuestionType } from '../model/types';
+import type { CreateQuizFormRequest } from '../model/types';
 
 // --- TYPY LOKALNE ---
 interface OptionDraft {
@@ -26,8 +26,8 @@ interface OptionDraft {
 interface QuestionDraft {
     id: number;
     title: string;
-    type: QuestionType;
-    timeLimitSeconds: number;
+    type: typeof QuestionType[keyof typeof QuestionType];
+    // USUNIĘTO: timeLimitSeconds
     points: number;
     options: OptionDraft[];
 }
@@ -58,10 +58,10 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
         { 
             id: Date.now(), 
             title: '', 
-            type: 'SINGLE_CHOICE', 
-            timeLimitSeconds: 30, 
+            type: QuestionType.SINGLE_CHOICE, 
+            // timeLimitSeconds usunięte
             points: 1000,
-            options: [...DEFAULT_OPTIONS_SINGLE] 
+            options: JSON.parse(JSON.stringify(DEFAULT_OPTIONS_SINGLE))
         }
     ]);
 
@@ -74,338 +74,282 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
             { 
                 id: Date.now(), 
                 title: '', 
-                type: 'SINGLE_CHOICE', 
-                timeLimitSeconds: 30, 
+                type: QuestionType.SINGLE_CHOICE, 
                 points: 1000,
-                options: [...DEFAULT_OPTIONS_SINGLE] 
+                options: JSON.parse(JSON.stringify(DEFAULT_OPTIONS_SINGLE))
             }
         ]);
     };
 
-    const removeQuestion = (index: number) => {
+    const removeQuestion = (id: number) => {
         if (questions.length <= 1) return;
-        const newQ = [...questions];
-        newQ.splice(index, 1);
-        setQuestions(newQ);
+        setQuestions(questions.filter(q => q.id !== id));
     };
 
-    const updateQuestion = (index: number, field: keyof QuestionDraft, value: any) => {
-        const newQ = [...questions];
-        const q = newQ[index];
-
-        // Logika resetowania opcji przy zmianie typu
-        if (field === 'type') {
-            const newType = value as QuestionType;
-
-            // A. Jeśli przełączamy na TRUE_FALSE -> resetujemy opcje na sztywno
-            if (newType === 'TRUE_FALSE') {
-                q.options = [
-                    { text: 'Prawda', isCorrect: true },
-                    { text: 'Fałsz', isCorrect: false }
-                ];
+    const updateQuestion = (id: number, field: keyof QuestionDraft, value: any) => {
+        setQuestions(questions.map(q => {
+            if (q.id === id) {
+                if (field === 'type') {
+                    const newType = value;
+                    if (newType === QuestionType.TRUE_FALSE) {
+                        return { ...q, type: newType, options: JSON.parse(JSON.stringify(DEFAULT_OPTIONS_TF)) };
+                    }
+                    if (q.type === QuestionType.TRUE_FALSE && newType !== QuestionType.TRUE_FALSE) {
+                        return { ...q, type: newType, options: JSON.parse(JSON.stringify(DEFAULT_OPTIONS_SINGLE)) };
+                    }
+                    if (newType === QuestionType.SINGLE_CHOICE) {
+                         const firstCorrect = q.options.findIndex(o => o.isCorrect);
+                         const safeIndex = firstCorrect !== -1 ? firstCorrect : 0;
+                         const newOptions = q.options.map((o, i) => ({ ...o, isCorrect: i === safeIndex }));
+                         return { ...q, type: newType, options: newOptions };
+                    }
+                }
+                return { ...q, [field]: value };
             }
-            // B. Jeśli przełączamy na SINGLE_CHOICE (np. z Multiple) -> musimy zostawić tylko 1 poprawną
-            else if (newType === 'SINGLE_CHOICE') {
-                // Znajdź indeks pierwszej poprawnej odpowiedzi
-                const firstCorrectIndex = q.options.findIndex(o => o.isCorrect);
-                // Jeśli żadna nie była, zaznaczamy pierwszą (0). Jeśli była, zostawiamy ją.
-                const targetIndex = firstCorrectIndex !== -1 ? firstCorrectIndex : 0;
-                
-                // Resetujemy flagi: tylko targetIndex jest true
-                q.options.forEach((o, i) => {
-                    o.isCorrect = (i === targetIndex);
-                });
-            }
-            // C. Jeśli przełączamy z TRUE_FALSE na inne -> przywracamy domyślne puste
-            else if (q.type === 'TRUE_FALSE') {
-                q.options = [
-                    { text: '', isCorrect: true },
-                    { text: '', isCorrect: false }
-                ];
-            }
-        }
-
-        (q as any)[field] = value;
-        setQuestions(newQ);
+            return q;
+        }));
     };
 
     // --- HANDLERY OPCJI ---
 
-    const handleOptionTextChange = (qIndex: number, oIndex: number, text: string) => {
-        const newQ = [...questions];
-        newQ[qIndex].options[oIndex].text = text;
-        setQuestions(newQ);
-    };
-
-    const handleCorrectChange = (qIndex: number, oIndex: number) => {
-        const newQ = [...questions];
-        const q = newQ[qIndex];
-
-        if (q.type === 'SINGLE_CHOICE' || q.type === 'TRUE_FALSE') {
-            // Tylko jedna może być poprawna -> resetujemy inne
-            q.options.forEach((o, i) => o.isCorrect = (i === oIndex));
-        } else {
-            // MULTIPLE_CHOICE -> toggle
-            q.options[oIndex].isCorrect = !q.options[oIndex].isCorrect;
-        }
-        setQuestions(newQ);
-    };
-
-    const addOption = (qIndex: number) => {
-        const newQ = [...questions];
-        if (newQ[qIndex].options.length >= 6) return;
-        newQ[qIndex].options.push({ text: '', isCorrect: false });
-        setQuestions(newQ);
-    };
-
-    const removeOption = (qIndex: number, oIndex: number) => {
-        const newQ = [...questions];
-        if (newQ[qIndex].options.length <= 2) return;
-        newQ[qIndex].options.splice(oIndex, 1);
-        setQuestions(newQ);
-    };
-
-    // --- WALIDACJA I SUBMIT ---
-
-    const validate = (): boolean => {
-        if (title.length < 3) { showError("Tytuł jest za krótki"); return false; }
-        
-        for (let i = 0; i < questions.length; i++) {
-            const q = questions[i];
-            
-            // Walidacja treści
-            if (!q.title.trim()) { showError(`Pytanie ${i+1} nie ma treści`); return false; }
-            if (q.options.some(o => !o.text.trim())) { showError(`Pytanie ${i+1} ma puste opcje`); return false; }
-            
-            // Zliczamy poprawne odpowiedzi
-            const correctCount = q.options.filter(o => o.isCorrect).length;
-
-            // Walidacja logiki gry
-            if (q.type === 'SINGLE_CHOICE' || q.type === 'TRUE_FALSE') {
-                if (correctCount !== 1) {
-                    showError(`Pytanie ${i+1} (${q.type}) musi mieć DOKŁADNIE jedną poprawną odpowiedź.`);
-                    return false;
-                }
-            } else if (q.type === 'MULTIPLE_CHOICE') {
-                if (correctCount < 1) {
-                    showError(`Pytanie ${i+1} (Wielokrotny wybór) musi mieć PRZYNAJMNIEJ jedną poprawną odpowiedź.`);
-                    return false;
-                }
+    const handleOptionTextChange = (qId: number, oIndex: number, text: string) => {
+        setQuestions(questions.map(q => {
+            if (q.id === qId) {
+                const newOptions = [...q.options];
+                newOptions[oIndex] = { ...newOptions[oIndex], text };
+                return { ...q, options: newOptions };
             }
-        }
-        return true;
+            return q;
+        }));
     };
+
+    const handleCorrectChange = (qId: number, oIndex: number) => {
+        setQuestions(questions.map(q => {
+            if (q.id === qId) {
+                const newOptions = [...q.options];
+                if (q.type === QuestionType.SINGLE_CHOICE || q.type === QuestionType.TRUE_FALSE) {
+                    newOptions.forEach((o, i) => o.isCorrect = (i === oIndex));
+                } else {
+                    newOptions[oIndex].isCorrect = !newOptions[oIndex].isCorrect;
+                }
+                return { ...q, options: newOptions };
+            }
+            return q;
+        }));
+    };
+
+    const addOption = (qId: number) => {
+        setQuestions(questions.map(q => {
+            if (q.id === qId && q.options.length < CHOICES_MAX) {
+                return { ...q, options: [...q.options, { text: '', isCorrect: false }] };
+            }
+            return q;
+        }));
+    };
+
+    const removeOption = (qId: number, oIndex: number) => {
+        setQuestions(questions.map(q => {
+            if (q.id === qId) {
+                const newOptions = q.options.filter((_, i) => i !== oIndex);
+                return { ...q, options: newOptions };
+            }
+            return q;
+        }));
+    };
+
+    // --- WALIDACJA ---
+    const TITLE_MIN = 3;
+    const TITLE_MAX = 50;
+    const QUESTIONS_MAX = 20;
+    const CHOICES_MAX = 6;
+
+    const isTitleValid = title.length >= TITLE_MIN && title.length <= TITLE_MAX;
+    const hasEnoughQuestions = questions.length > 0;
+
+    const areQuestionsValid = questions.every(q => {
+        const titleOk = q.title.trim().length > 0;
+        const optionsOk = q.options.every(o => o.text.trim().length > 0);
+        const correctOk = q.options.some(o => o.isCorrect);
+        return titleOk && optionsOk && correctOk;
+    });
+
+    const isFormValid = isTitleValid && hasEnoughQuestions && areQuestionsValid && !isSubmitting;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validate()) return;
+        if (!isFormValid) return;
 
         setIsSubmitting(true);
+
+        const payload: CreateQuizFormRequest = {
+            title,
+            isPrivate,
+            questions: questions.map(q => ({
+                title: q.title,
+                type: q.type,
+                // timeLimitSeconds: USUNIĘTE
+                points: q.points,
+                options: q.options
+            }))
+        };
+
         try {
-            await quizService.createForm({
-                title,
-                isPrivate,
-                questions: questions.map(q => ({
-                    title: q.title,
-                    type: q.type,
-                    timeLimitSeconds: q.timeLimitSeconds,
-                    points: q.points,
-                    options: q.options
-                }))
-            });
+            await quizService.createForm(payload);
             showSuccess("Quiz utworzony pomyślnie!");
             onSuccess();
-        } catch (e) {
-            showError("Błąd podczas tworzenia quizu.");
+        } catch (error) {
+            console.error("Error creating quiz:", error);
+            showError("Wystąpił błąd podczas tworzenia quizu.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    // --- RENDER ---
+
     return (
-        <Card component={Paper} elevation={3} sx={{ p: 3, maxWidth: 900, mx: 'auto' }}>
+        <Card component={Paper} elevation={6} sx={{ p: 4 }}>
             <CardContent>
-                <Typography variant="h5" gutterBottom fontWeight="bold">Kreator Quizu</Typography>
-                
-                <Stack spacing={3} component="form" onSubmit={handleSubmit}>
-                    
-                    {/* Ustawienia Główne */}
-                    <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-                        <Grid container spacing={2} alignItems="center">
-                            <Grid size={{ xs: 12, md: 8 }}>
-                                <TextField 
-                                    label="Tytuł Quizu" 
-                                    fullWidth 
-                                    value={title} 
-                                    onChange={e => setTitle(e.target.value)}
-                                    required 
+                <form onSubmit={handleSubmit}>
+                    <Stack spacing={4}>
+                        
+                        <Box>
+                            <Typography variant="h6" gutterBottom>Ustawienia Główne</Typography>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label={`Tytuł Quizu (${TITLE_MIN}-${TITLE_MAX} znaków)`}
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                    error={title.length > 0 && !isTitleValid}
+                                    helperText={title.length > 0 && !isTitleValid ? "Nieprawidłowa długość tytułu" : ""}
                                 />
-                            </Grid>
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <FormControlLabel 
-                                    control={<Switch checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)} />}
-                                    label="Quiz Prywatny"
-                                />
-                            </Grid>
-                        </Grid>
-                    </Box>
-
-                    <Divider />
-
-                    {/* Lista Pytań */}
-                    {questions.map((q, qIndex) => (
-                        <Box key={q.id} sx={{ position: 'relative', p: 3, border: '1px solid #ddd', borderRadius: 2 }}>
-                            
-                            {/* Header Pytania */}
-                            <Grid container spacing={2} sx={{ mb: 2 }}>
-                                <Grid size={{ xs: 12, md: 8 }}>
-                                    <TextField 
-                                        label={`Pytanie #${qIndex + 1}`}
-                                        fullWidth
-                                        value={q.title}
-                                        onChange={e => updateQuestion(qIndex, 'title', e.target.value)}
-                                        placeholder="Wpisz treść pytania..."
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 4 }}>
-                                    <FormControl fullWidth>
-                                        <InputLabel>Typ Pytania</InputLabel>
-                                        <Select
-                                            value={q.type}
-                                            label="Typ Pytania"
-                                            onChange={e => updateQuestion(qIndex, 'type', e.target.value)}
-                                        >
-                                            <MenuItem value="SINGLE_CHOICE">Jednokrotny wybór</MenuItem>
-                                            <MenuItem value="MULTIPLE_CHOICE">Wielokrotny wybór</MenuItem>
-                                            <MenuItem value="TRUE_FALSE">Prawda / Fałsz</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
-
-                            {/* Parametry (Czas, Punkty) */}
-                            <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                                <TextField 
-                                    label="Czas"
-                                    type="number"
-                                    size="small"
-                                    value={q.timeLimitSeconds}
-                                    onChange={e => updateQuestion(qIndex, 'timeLimitSeconds', Number(e.target.value))}
-                                    InputProps={{ 
-                                        startAdornment: <InputAdornment position="start"><TimerIcon fontSize="small"/></InputAdornment>,
-                                        endAdornment: <InputAdornment position="end">s</InputAdornment>
-                                    }}
-                                    sx={{ width: 130 }}
-                                />
-                                <TextField 
-                                    label="Punkty"
-                                    type="number"
-                                    size="small"
-                                    value={q.points}
-                                    onChange={e => updateQuestion(qIndex, 'points', Number(e.target.value))}
-                                    InputProps={{ 
-                                        startAdornment: <InputAdornment position="start"><StarIcon fontSize="small"/></InputAdornment> 
-                                    }}
-                                    sx={{ width: 130 }}
+                                <FormControlLabel
+                                    control={<Switch checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />}
+                                    label="Quiz Prywatny (tylko na zaproszenie)"
                                 />
                             </Stack>
+                        </Box>
 
-                            {/* Opcje Odpowiedzi */}
-                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                                Odpowiedzi (Zaznacz poprawne):
-                            </Typography>
+                        <Divider />
 
-                            <Stack spacing={1}>
-                                {q.options.map((opt, oIndex) => (
-                                    <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
-                                        {/* Checkbox/Radio dla poprawnej odpowiedzi */}
-                                        {q.type === 'MULTIPLE_CHOICE' ? (
-                                            <Checkbox 
-                                                checked={opt.isCorrect} 
-                                                onChange={() => handleCorrectChange(qIndex, oIndex)} 
-                                                color="success"
-                                            />
-                                        ) : (
-                                            <Radio 
-                                                checked={opt.isCorrect} 
-                                                onChange={() => handleCorrectChange(qIndex, oIndex)}
-                                                color="success"
-                                            />
-                                        )}
-                                        
-                                        <TextField 
-                                            fullWidth 
-                                            size="small"
-                                            value={opt.text}
-                                            onChange={e => handleOptionTextChange(qIndex, oIndex, e.target.value)}
-                                            placeholder={`Opcja ${oIndex + 1}`}
-                                            // Dla True/False tekst jest stały (opcjonalnie można zablokować)
-                                        />
-                                        
-                                        {q.type !== 'TRUE_FALSE' && (
-                                            <IconButton 
-                                                size="small" 
-                                                color="error" 
-                                                disabled={q.options.length <= 2}
-                                                onClick={() => removeOption(qIndex, oIndex)}
-                                            >
-                                                <DeleteIcon fontSize="small" />
+                        <Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                                <Typography variant="h5">Pytania ({questions.length}/{QUESTIONS_MAX})</Typography>
+                                <Button variant="outlined" startIcon={<AddCircleOutlineIcon />} onClick={addQuestion} disabled={questions.length >= QUESTIONS_MAX}>
+                                    Dodaj Pytanie
+                                </Button>
+                            </Box>
+
+                            <Stack spacing={3}>
+                                {questions.map((q, qIndex) => (
+                                    <Card key={q.id} variant="outlined" sx={{ position: 'relative', borderLeft: '4px solid #ed6c02' }}>
+                                        <CardContent>
+                                            
+                                            {/* Wiersz 1: Treść i Typ */}
+                                            <Grid container spacing={2} sx={{ mb: 2 }}>
+                                                <Grid size={{ xs: 12, md: 8 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        label={`Pytanie #${qIndex + 1}`}
+                                                        value={q.title}
+                                                        onChange={(e) => updateQuestion(q.id, 'title', e.target.value)}
+                                                        required
+                                                        error={q.title.trim().length === 0}
+                                                        placeholder="Wpisz treść pytania..."
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, md: 4 }}>
+                                                    <FormControl fullWidth>
+                                                        <InputLabel>Typ</InputLabel>
+                                                        <Select
+                                                            value={q.type}
+                                                            label="Typ"
+                                                            onChange={(e) => updateQuestion(q.id, 'type', e.target.value)}
+                                                        >
+                                                            <MenuItem value={QuestionType.SINGLE_CHOICE}>Jednokrotny wybór</MenuItem>
+                                                            <MenuItem value={QuestionType.MULTIPLE_CHOICE}>Wielokrotny wybór</MenuItem>
+                                                            <MenuItem value={QuestionType.TRUE_FALSE}>Prawda / Fałsz</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+                                                </Grid>
+                                            </Grid>
+
+                                            {/* Wiersz 2: Tylko Punkty (Czas usunięty) */}
+                                            <Box sx={{ mb: 2 }}>
+                                                <TextField 
+                                                    label="Punkty za odpowiedź"
+                                                    type="number"
+                                                    size="small"
+                                                    value={q.points}
+                                                    onChange={(e) => updateQuestion(q.id, 'points', Number(e.target.value))}
+                                                    InputProps={{ 
+                                                        startAdornment: <InputAdornment position="start"><StarIcon fontSize="small"/></InputAdornment> 
+                                                    }}
+                                                    sx={{ width: 180 }}
+                                                    helperText="Max pkt (im szybciej, tym więcej)"
+                                                />
+                                            </Box>
+
+                                            {/* Wiersz 3: Opcje */}
+                                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                                Odpowiedzi (Zaznacz poprawne):
+                                            </Typography>
+
+                                            <Stack spacing={1}>
+                                                {q.options.map((opt, oIndex) => (
+                                                    <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
+                                                        {q.type === QuestionType.MULTIPLE_CHOICE ? (
+                                                            <Checkbox checked={opt.isCorrect} onChange={() => handleCorrectChange(q.id, oIndex)} color="success" />
+                                                        ) : (
+                                                            <Radio checked={opt.isCorrect} onChange={() => handleCorrectChange(q.id, oIndex)} color="success" />
+                                                        )}
+                                                        
+                                                        <TextField 
+                                                            fullWidth size="small"
+                                                            value={opt.text}
+                                                            onChange={(e) => handleOptionTextChange(q.id, oIndex, e.target.value)}
+                                                            placeholder={`Opcja ${oIndex + 1}`}
+                                                            disabled={q.type === QuestionType.TRUE_FALSE}
+                                                        />
+                                                        
+                                                        {q.type !== QuestionType.TRUE_FALSE && (
+                                                            <IconButton size="small" color="error" onClick={() => removeOption(q.id, oIndex)} disabled={q.options.length <= 2}>
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        )}
+                                                    </Stack>
+                                                ))}
+                                            </Stack>
+
+                                            {q.type !== QuestionType.TRUE_FALSE && q.options.length < CHOICES_MAX && (
+                                                <Button size="small" sx={{ mt: 1, ml: 4 }} startIcon={<AddCircleOutlineIcon />} onClick={() => addOption(q.id)}>
+                                                    Dodaj Opcję
+                                                </Button>
+                                            )}
+                                        </CardContent>
+
+                                        {questions.length > 1 && (
+                                            <IconButton onClick={() => removeQuestion(q.id)} sx={{ position: 'absolute', top: 5, right: 5 }} color="error">
+                                                <DeleteIcon />
                                             </IconButton>
                                         )}
-                                    </Stack>
+                                    </Card>
                                 ))}
                             </Stack>
-
-                            {/* Przycisk dodawania opcji (tylko dla choice) */}
-                            {q.type !== 'TRUE_FALSE' && q.options.length < 6 && (
-                                <Button 
-                                    size="small" 
-                                    startIcon={<AddCircleOutlineIcon />} 
-                                    onClick={() => addOption(qIndex)} 
-                                    sx={{ mt: 1, ml: 5 }}
-                                >
-                                    Dodaj Opcję
-                                </Button>
-                            )}
-
-                            {/* Usuwanie pytania */}
-                            {questions.length > 1 && (
-                                <IconButton 
-                                    onClick={() => removeQuestion(qIndex)} 
-                                    color="error" 
-                                    sx={{ position: 'absolute', top: 10, right: 10 }}
-                                >
-                                    <DeleteIcon />
-                                </IconButton>
-                            )}
                         </Box>
-                    ))}
 
-                    {/* Akcje Końcowe */}
-                    <Button 
-                        variant="outlined" 
-                        startIcon={<AddCircleOutlineIcon />} 
-                        onClick={addQuestion} 
-                        fullWidth 
-                        sx={{ py: 1.5, borderStyle: 'dashed' }}
-                    >
-                        Dodaj Nowe Pytanie
-                    </Button>
-
-                    <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ pt: 2 }}>
-                        <Button onClick={onCancel} color="inherit">Anuluj</Button>
-                        <Button 
-                            type="submit" 
-                            variant="contained" 
-                            size="large"
-                            disabled={isSubmitting}
-                            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit"/> : <SaveIcon />}
-                        >
-                            Zapisz Quiz
-                        </Button>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
+                            <Button variant="outlined" onClick={onCancel} startIcon={<ArrowBackIcon />}>
+                                Anuluj
+                            </Button>
+                            <Button type="submit" variant="contained" disabled={!isFormValid} startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}>
+                                {isSubmitting ? 'Zapisywanie...' : 'Zapisz Quiz'}
+                            </Button>
+                        </Box>
                     </Stack>
-
-                </Stack>
+                </form>
             </CardContent>
         </Card>
     );

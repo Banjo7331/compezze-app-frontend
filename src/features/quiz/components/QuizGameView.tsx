@@ -20,9 +20,10 @@ interface QuizGameViewProps {
     question: GameQuestion;
     isHost: boolean;
     onSubmitAnswer: (optionId: number) => void;
+    onFinishEarly?: () => void;
 }
 
-export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, onSubmitAnswer }) => {
+export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, onSubmitAnswer, onFinishEarly }) => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
 
@@ -95,9 +96,19 @@ export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, on
             </Grid>
 
             {isHost && (
-                <Alert severity="info" sx={{ mt: 4 }}>
-                    Widok Hosta. Czekaj na koniec czasu.
-                </Alert>
+                <Box sx={{ mt: 4, textAlign: 'center' }}>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        Widok Hosta. Nie możesz odpowiadać.
+                    </Alert>
+                    <Button 
+                        variant="outlined" 
+                        color="warning" 
+                        size="large"
+                        onClick={onFinishEarly}
+                    >
+                        Zakończ Pytanie Teraz ⏹️
+                    </Button>
+                </Box>
             )}
         </Box>
     );

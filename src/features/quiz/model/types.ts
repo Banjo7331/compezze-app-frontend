@@ -28,7 +28,6 @@ export interface QuizOption {
 export interface QuizQuestion {
     title: string;
     type: QuestionType;
-    timeLimitSeconds: number;
     points: number;
     options: QuizOption[];
 }
@@ -62,8 +61,8 @@ export interface GetQuizFormSummaryResponse {
 export interface CreateQuizRoomRequest {
     quizFormId: number;
     maxParticipants?: number;
+    timePerQuestion?: number;
     isPrivate: boolean;
-    // durationMinutes - brak, bo quiz ma sztywny TTL
 }
 
 export interface CreateQuizRoomResponse {
@@ -102,7 +101,7 @@ export interface GetQuizRoomDetailsResponse {
     roomId: string;
     quizTitle: string;
     hostId: string;
-    isOpen: boolean;
+    participant: boolean;
     status: QuizRoomStatus;
     isPrivate: boolean;
     currentParticipants: number;

@@ -139,7 +139,7 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                         <Button 
                             variant="contained" 
                             size="large" 
-                            onClick={() => navigate('/profile')}
+                            onClick={() => navigate('/quiz')}
                             startIcon={<ArrowBackIcon />}
                         >
                             Wróć do Panelu Hosta
@@ -153,7 +153,7 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                         <Button 
                             variant="outlined" 
                             size="large" 
-                            onClick={() => navigate('/profile')}
+                            onClick={() => navigate('/quiz/')}
                             startIcon={<ArrowBackIcon />}
                         >
                             Wyjdź z Gry

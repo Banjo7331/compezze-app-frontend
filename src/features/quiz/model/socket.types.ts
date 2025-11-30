@@ -33,6 +33,7 @@ export interface QuizStartedMessage {
 // 3. Nowe Pytanie (Start rundy)
 export interface QuizNewQuestionMessage {
     event: 'NEW_QUESTION';
+    questionId: number;
     questionIndex: number;
     title: string;
     options: string[]; // Lista tekstów (kolejność musi być zgodna z ID na backendzie)

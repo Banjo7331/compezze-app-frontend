@@ -1,74 +1,92 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Dialog, DialogTitle, DialogContent, DialogActions, 
-    TextField, Button, Stack, Typography, Box
+    TextField, Button, Stack, Typography, InputAdornment
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import TimerIcon from '@mui/icons-material/Timer';
 
 interface StartQuizRoomDialogProps {
     open: boolean;
     onClose: () => void;
-    onConfirm: (config: { maxParticipants: number }) => void; // Bez duration
+    onConfirm: (config: { maxParticipants: number, timePerQuestion: number }) => void;
     isLoading?: boolean;
 }
 
 export const StartQuizRoomDialog: React.FC<StartQuizRoomDialogProps> = ({ open, onClose, onConfirm, isLoading }) => {
-    // Wartości
     const [maxParticipants, setMaxParticipants] = useState<string>('100');
+    const [timePerQuestion, setTimePerQuestion] = useState<string>('30'); // Domyślnie 30s
 
-    // Stany błędów
     const [participantsError, setParticipantsError] = useState<string | null>(null);
+    const [timeError, setTimeError] = useState<string | null>(null);
 
-    // Reset
     useEffect(() => {
         if (open) {
             setMaxParticipants('100');
+            setTimePerQuestion('30');
             setParticipantsError(null);
+            setTimeError(null);
         }
     }, [open]);
 
-    // --- WALIDACJA UCZESTNIKÓW ---
     const handleParticipantsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setMaxParticipants(val);
-
         const num = Number(val);
-        if (!val) {
-            setParticipantsError("Pole wymagane");
-        } else if (isNaN(num) || num < 2) {
-            setParticipantsError("Minimum 2 uczestników");
-        } else if (num > 1000) {
-            setParticipantsError("Maksymalnie 1000 uczestników");
-        } else {
-            setParticipantsError(null);
-        }
+        if (!val) setParticipantsError("Pole wymagane");
+        else if (isNaN(num) || num < 2) setParticipantsError("Min 2 graczy");
+        else if (num > 1000) setParticipantsError("Max 1000 graczy");
+        else setParticipantsError(null);
+    };
+
+    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setTimePerQuestion(val);
+        const num = Number(val);
+        if (!val) setTimeError("Pole wymagane");
+        else if (isNaN(num) || num < 5) setTimeError("Min 5 sekund");
+        else if (num > 300) setTimeError("Max 300 sekund (5 min)");
+        else setTimeError(null);
     };
 
     const handleSubmit = () => {
-        if (participantsError || !maxParticipants) return;
+        if (participantsError || timeError || !maxParticipants || !timePerQuestion) return;
         
-        // W Quizach czas sesji jest stały (np. 3h), więc nie pytamy o duration
         onConfirm({ 
-            maxParticipants: Number(maxParticipants) 
+            maxParticipants: Number(maxParticipants),
+            timePerQuestion: Number(timePerQuestion)
         });
     };
 
-    const isValid = !participantsError && maxParticipants !== '';
+    const isValid = !participantsError && !timeError && maxParticipants !== '' && timePerQuestion !== '';
 
     return (
         <Dialog open={open} onClose={!isLoading ? onClose : undefined} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PlayArrowIcon color="success" />
-                Uruchom Grę (Lobby)
+                Uruchom Grę
             </DialogTitle>
             
             <DialogContent dividers>
                 <Stack spacing={3} sx={{ mt: 1 }}>
                     <Typography variant="body2" color="text.secondary">
-                        Utwórz poczekalnię dla graczy. Gra będzie aktywna przez 3 godziny lub do momentu zakończenia przez Ciebie.
+                        Skonfiguruj parametry rozgrywki.
                     </Typography>
 
-                    {/* UCZESTNICY */}
+                    <TextField
+                        label="Czas na jedno pytanie (sekundy)"
+                        type="number"
+                        fullWidth
+                        value={timePerQuestion}
+                        onChange={handleTimeChange}
+                        error={!!timeError}
+                        helperText={timeError || "Ile czasu gracze mają na odpowiedź?"}
+                        InputProps={{ 
+                            startAdornment: <InputAdornment position="start"><TimerIcon/></InputAdornment>,
+                            inputProps: { min: 5, max: 300 } 
+                        }}
+                    />
+
                     <TextField
                         label="Limit graczy"
                         type="number"
@@ -76,23 +94,16 @@ export const StartQuizRoomDialog: React.FC<StartQuizRoomDialogProps> = ({ open, 
                         value={maxParticipants}
                         onChange={handleParticipantsChange}
                         error={!!participantsError} 
-                        helperText={participantsError || "Ile osób może dołączyć?"}
+                        helperText={participantsError || "Maksymalna liczba uczestników."}
                         InputProps={{ inputProps: { min: 2, max: 1000 } }}
                     />
                 </Stack>
             </DialogContent>
 
             <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose} disabled={isLoading} color="inherit">
-                    Anuluj
-                </Button>
-                <Button 
-                    onClick={handleSubmit} 
-                    variant="contained" 
-                    color="success"
-                    disabled={isLoading || !isValid}
-                >
-                    {isLoading ? "Tworzenie Lobby..." : "Utwórz Lobby"}
+                <Button onClick={onClose} disabled={isLoading} color="inherit">Anuluj</Button>
+                <Button onClick={handleSubmit} variant="contained" color="success" disabled={isLoading || !isValid}>
+                    {isLoading ? "Tworzenie..." : "Utwórz Lobby"}
                 </Button>
             </DialogActions>
         </Dialog>
