@@ -14,16 +14,14 @@ const SurveyRoomPage = lazy(() => import('./survey/SurveyRoomPage'));
 const SurveyParticipantPage = lazy(() => import('./survey/SurveyParticipantPage'));
 
 const QuizPage = lazy(() => import('./quiz/QuizPage')); // Strona Główna Quizów
-// Pamiętaj, żeby stworzyć plik QuizCreatePage.tsx (wrapper na QuizCreateForm)
-// Jeśli jeszcze go nie masz, możesz tymczasowo wstawić placeholder lub sam formularz.
 const QuizCreatePage = lazy(() => import('./quiz/QuizCreatePage')); 
 const QuizRoomPage = lazy(() => import('./quiz/QuizRoomPage'));
 
+const ContestPage = lazy(() => import('./contest/ContestPage'));
+const ContestCreatePage = lazy(() => import('./contest/ContestCreatePage'));
+const ContestDetailsPage = lazy(() => import('./contest/ContestDetailsPage'));
+
 const ProfilePage = lazy(() => import('./user/ProfilePage'));
-
-
-// Placeholderowe komponenty dla innych sekcji
-const ContestPage = () => <div>Contest Page (TODO)</div>;
 
 export const Routing = () => {
   return (
@@ -52,7 +50,18 @@ export const Routing = () => {
           </Route>
 
           {/* Inne trasy */}
-          <Route path="contest" element={<ContestPage />} /> 
+          <Route path="contest">
+            {/* Centrum Konkursów */}
+            <Route index element={<ContestPage />} />
+            
+            {/* Kreator Konkursu (z etapami) */}
+            <Route path="create" element={<ContestCreatePage />} />
+
+            <Route path=":contestId" element={<ContestDetailsPage />} />
+            
+            {/* TODO: Strona szczegółów konkursu / zarządzania */}
+            {/* <Route path=":contestId" element={<ContestDetailsPage />} /> */}
+          </Route>
           <Route path="quiz">
             {/* /quiz - Centrum Quizów */}
             <Route index element={<QuizPage />} />

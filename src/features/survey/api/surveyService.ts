@@ -41,6 +41,13 @@ export const surveyService = {
     return response.data;
   },
 
+  searchForms: async (query: string) => {
+        const response = await apiClient.get<Page<SurveyFormResponse>>(`/survey/form`, { 
+            params: { search: query, page: 0, size: 5 }
+        });
+        return response.data.content;
+    },
+
   getMyForms: async (params: PageableParams) => {
     const response = await apiClient.get<Page<MySurveyFormDto>>('/survey/form/my', { params });
     return response.data;

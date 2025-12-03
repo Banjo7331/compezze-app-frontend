@@ -37,6 +37,16 @@ export const quizService = {
         return response.data;
     },
 
+    searchForms: async (query: string) => {
+        // Zakładamy, że backend obsługuje parametr ?search=... lub ?title=...
+        // Jeśli nie, pobierze wszystkie i przefiltrujemy (mało wydajne, ale na start ok)
+        // Lepiej: dodać obsługę w backendzie. Tu zakładamy, że backend to obsłuży.
+        const response = await apiClient.get<Page<GetQuizFormSummaryResponse>>(`${BASE_URL}/form`, { 
+            params: { search: query, page: 0, size: 5 } // Pobieramy top 5
+        });
+        return response.data.content;
+    },
+
     deleteForm: async (id: number) => {
         // DELETE /api/v1/quiz/form/{id}
         await apiClient.delete(`${BASE_URL}/form/${id}`);
