@@ -4,23 +4,20 @@ import {
 } from '@mui/material';
 import type { ButtonProps } from '@mui/material'; 
 import AddIcon from '@mui/icons-material/Add';
-import SportsEsportsIcon from '@mui/icons-material/SportsEsports'; // Ikona pada
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import { Button } from '@/shared/ui/Button'; 
 import { Link } from 'react-router-dom';
 import type { LinkProps } from 'react-router-dom'; 
 
-// Importy komponentów quizowych
 import { QuizActiveRoomsList } from '@/features/quiz/components/QuizActiveRoomList';
 import { QuizFeaturedTemplatesWidget } from '@/features/quiz/components/QuizFeaturedTemplatesWidget';
 
 const QuizPage: React.FC = () => {
-    // Hack dla TypeScripta, żeby Button przyjmował prop 'to' z Routera
     const LinkButton = Button as React.ComponentType<ButtonProps & Pick<LinkProps, 'to'>>;
 
     return (
         <Container maxWidth="lg">
             <Box sx={{ my: 4 }}>
-                {/* NAGŁÓWEK */}
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
                     <Typography variant="h3" component="h1" gutterBottom fontWeight="bold" color="primary">
                         <SportsEsportsIcon sx={{ fontSize: 50, verticalAlign: 'middle', mr: 2 }} />
@@ -33,7 +30,6 @@ const QuizPage: React.FC = () => {
 
                 <Grid container spacing={4}>
                     
-                    {/* 1. LEWA: Utwórz Nowy Quiz */}
                     <Grid size={{ xs: 12, md: 5 }}>
                         <Paper 
                             elevation={6} 
@@ -69,12 +65,10 @@ const QuizPage: React.FC = () => {
                         </Paper>
                     </Grid>
 
-                    {/* 2. PRAWA: Widget "Szybki Start" */}
                     <Grid size={{ xs: 12, md: 7 }}>
                         <QuizFeaturedTemplatesWidget />
                     </Grid>
 
-                    {/* DÓŁ: LISTA AKTYWNYCH GIER */}
                     <Grid size={{ xs: 12 }}>
                         <Box sx={{ mt: 6 }}>
                             <Typography variant="h4" gutterBottom sx={{ borderBottom: '1px solid #ddd', pb: 1, mb: 3, display: 'flex', alignItems: 'center' }}>

@@ -33,13 +33,11 @@ export const NotificationCenter: React.FC = () => {
 
     const open = Boolean(anchorEl);
 
-    // Filtrowanie (Teraz TypeScript zna typ 'n')
     const filteredNotifications = notifications.filter((n) => {
         if (tabValue === 'ALL') return true;
         return n.type === tabValue;
     });
 
-    // TypeScript zna typ 'notif'
     const handleAction = (notif: AppNotification) => {
         markAsRead(notif.id);
         if (notif.actionUrl) {
@@ -57,11 +55,8 @@ export const NotificationCenter: React.FC = () => {
         }
     };
 
-    // ... (Reszta JSX bez zmian, jest poprawna) ...
-    // Skopiuj JSX z Twojego pytania lub mojej poprzedniej odpowiedzi
     return (
         <>
-            {/* PRZYCISK W PRAWYM DOLNYM ROGU */}
             <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 2000 }}>
                 <Badge badgeContent={unreadCount} color="error">
                     <Fab color="primary" aria-label="notifications" onClick={handleClick}>
@@ -70,7 +65,6 @@ export const NotificationCenter: React.FC = () => {
                 </Badge>
             </Box>
 
-            {/* PANEL POWIADOMIEŃ */}
             <Popover
                 open={open}
                 anchorEl={anchorEl}
@@ -87,7 +81,6 @@ export const NotificationCenter: React.FC = () => {
                 </Box>
                 <Divider />
 
-                {/* ZAKŁADKI */}
                 <Tabs 
                     value={tabValue} 
                     onChange={(_, v) => setTabValue(v)} 
@@ -102,7 +95,6 @@ export const NotificationCenter: React.FC = () => {
                     <Tab icon={<QuizIcon fontSize="small"/>} value="QUIZ" />
                 </Tabs>
 
-                {/* LISTA */}
                 <List sx={{ flexGrow: 1, overflow: 'auto', p: 0 }}>
                     {filteredNotifications.length === 0 ? (
                         <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>

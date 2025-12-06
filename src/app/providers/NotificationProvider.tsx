@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Typy powiadomień
 export type NotificationType = 'SURVEY' | 'CONTEST' | 'QUIZ' | 'SYSTEM';
 
 export interface AppNotification {
@@ -8,7 +7,7 @@ export interface AppNotification {
     type: NotificationType;
     title: string;
     message: string;
-    actionUrl?: string; // Link do dołączenia
+    actionUrl?: string;
     timestamp: number;
     isRead: boolean;
 }
@@ -26,12 +25,10 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-        // Ładowanie z localStorage przy starcie
         const saved = localStorage.getItem('app_notifications');
         return saved ? JSON.parse(saved) : [];
     });
 
-    // Zapisywanie do localStorage przy każdej zmianie
     useEffect(() => {
         localStorage.setItem('app_notifications', JSON.stringify(notifications));
     }, [notifications]);
@@ -45,7 +42,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             timestamp: Date.now(),
             isRead: false
         };
-        // Nowe na górze
         setNotifications(prev => [newNotif, ...prev]);
     };
 

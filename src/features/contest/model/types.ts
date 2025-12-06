@@ -145,17 +145,37 @@ export interface ContestDetailsDto {
     endDate: string;
     
     status: 'CREATED' | 'DRAFT' | 'ACTIVE' | 'FINISHED';
-    currentStageId: number | null;
 
     participantLimit: number;
     currentParticipantsCount: number;
-    isPrivate: boolean;
+    private: boolean;
 
-    isOrganizer: boolean;
-    isParticipant: boolean;
+    organizer: boolean;
+    participant: boolean;
     myRoles: ContestRole[];
 
     stages: StageDto[];
 }
 
 export type SubmissionStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface ContestParticipantDto {
+    id: number;
+    userId: string;
+    displayName: string;
+    roles: ContestRole[];
+    submissionId?: string; 
+    submissionStatus?: string; 
+}
+
+// --- WERYFIKACJA ZGŁOSZEŃ ---
+export interface SubmissionDto {
+    id: string;
+    participantName: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    contentUrl?: string; // URL do obrazka/pliku
+    comment?: string;
+    createdAt: string;
+}
+
+export type ReviewAction = 'APPROVED' | 'REJECTED';

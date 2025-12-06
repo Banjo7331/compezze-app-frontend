@@ -12,7 +12,6 @@ import { Button } from '@/shared/ui/Button';
 import { Link } from 'react-router-dom';
 import type { LinkProps } from 'react-router-dom'; 
 
-// === IMPORTY NASZYCH GOTOWYCH KOMPONENTÓW ===
 import { ActiveRoomsList } from '@/features/survey/components/ActiveRoomList';
 import { FeaturedTemplatesWidget } from '@/features/survey/components/FeaturedFormsWidget';
 
@@ -27,12 +26,6 @@ const SurveyPage: React.FC = () => {
                 </Typography>
 
                 <Grid container spacing={4}>
-                    
-                    {/* ================================================= */}
-                    {/* GÓRA: PANELE AKCJI */}
-                    {/* ================================================= */}
-
-                    {/* 1. LEWA: Utwórz Nową Ankietę (Statyczny Link) */}
                     <Grid size={{ xs: 12, md: 5 }}>
                         <Paper 
                             elevation={6} 
@@ -45,7 +38,7 @@ const SurveyPage: React.FC = () => {
                                 justifyContent: 'center', 
                                 backgroundColor: '#e3f2fd',
                                 borderRadius: 2,
-                                minHeight: 300 // Wyrównanie wysokości
+                                minHeight: 300
                             }}
                         >
                             <AddIcon sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
@@ -67,23 +60,15 @@ const SurveyPage: React.FC = () => {
                         </Paper>
                     </Grid>
 
-                    {/* 2. PRAWA: Widget "Szybki Start" (Pobiera 3 ostatnie szablony) */}
                     <Grid size={{ xs: 12, md: 7 }}>
-                        {/* Ten komponent zawiera już Paper, listę 3 ankiet i przycisk "Więcej" */}
                         <FeaturedTemplatesWidget />
                     </Grid>
-
-                    {/* ================================================= */}
-                    {/* DÓŁ: PRAWDZIWA LISTA AKTYWNYCH POKOI */}
-                    {/* ================================================= */}
-
                     <Grid size={{ xs: 12 }}>
                         <Box sx={{ mt: 6 }}>
                             <Typography variant="h4" gutterBottom sx={{ borderBottom: '1px solid #ddd', pb: 1, mb: 3 }}>
                                 🟢 Dostępne Pokoje (Active Rooms)
                             </Typography>
                             
-                            {/* Lista pokoi, do których można dołączyć */}
                             <ActiveRoomsList />
                             
                         </Box>

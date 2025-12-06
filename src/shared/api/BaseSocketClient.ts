@@ -1,7 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import type { IMessage, StompSubscription } from '@stomp/stompjs';
 
-// Klasa generyczna z typem T dla ładunku wiadomości
 export class BaseSocketClient<T> { 
   protected client: Client;
   protected serviceName: string;
@@ -12,12 +11,10 @@ export class BaseSocketClient<T> {
     this.client = new Client({
       brokerURL: brokerUrl,
       
-      // --- KONFIGURACJA POŁĄCZENIA ---
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
 
-      // KLUCZOWA ZMIANA: beforeConnect wykonuje się przed KAŻDĄ próbą połączenia (również przy reconnect)
       beforeConnect: () => {
           const token = localStorage.getItem('accessToken');
           
@@ -28,17 +25,12 @@ export class BaseSocketClient<T> {
               console.log(`[${this.serviceName}] Attaching fresh Bearer Token...`);
           } else {
               console.warn(`[${this.serviceName}] No token found in localStorage. Connecting as guest/cookie...`);
-              // Jeśli używasz ciasteczek, to tutaj headers mogą być puste, a przeglądarka i tak wyśle cookie.
-              // Jeśli JWT jest wymagane, backend odrzuci połączenie, a klient spróbuje ponownie za 5s (gdy token może już wrócić).
           }
       },
 
       debug: (str) => {
-        // console.log(`[WS-${this.serviceName.toUpperCase()}]: ${str}`);
       },
     });
-
-    // --- HANDLERY ---
 
     this.client.onConnect = (frame) => {
       console.log(`[${this.serviceName}] Connected!`);
@@ -53,8 +45,6 @@ export class BaseSocketClient<T> {
         console.log(`[${this.serviceName}] Connection Closed`);
     }
   }
-
-  // --- METODY CYKLU ŻYCIA ---
 
   public activate() {
     if (this.client.active) {
@@ -78,8 +68,6 @@ export class BaseSocketClient<T> {
       return this.client.connected;
   }
   
-  // --- METODY SUBSKRYPCJI ---
-
   public subscribeToTopic(topic: string, callback: (payload: T) => void): string {
     const trySubscribe = () => {
         if (this.client.connected) {
@@ -97,7 +85,6 @@ export class BaseSocketClient<T> {
             return subscription.id; 
 
         } else {
-            // console.log(`[${this.serviceName}] Waiting for connection...`);
             setTimeout(trySubscribe, 500);
             return ''; 
         }
@@ -107,10 +94,8 @@ export class BaseSocketClient<T> {
   }
   
   public unsubscribe(subscriptionId: string): void {
-      // Dodano try-catch i sprawdzenie clienta, aby uniknąć błędów przy demontażu
       if (this.client && subscriptionId) {
           try {
-              // Sprawdzamy czy connected, bo unsubscribe na rozłączonym kliencie może rzucić błąd
               if (this.client.connected) {
                  this.client.unsubscribe(subscriptionId);
                  console.log(`[${this.serviceName}] Unsubscribed: ${subscriptionId}`);

@@ -2,7 +2,6 @@ import React from 'react';
 import { Container, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
-// Importujemy komponent formularza z warstwy Features
 import { QuizCreateForm } from '@/features/quiz/components/QuizCreateForm';
 
 const QuizCreatePage: React.FC = () => {

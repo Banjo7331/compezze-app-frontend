@@ -9,7 +9,6 @@ import { quizService } from '@/features/quiz/api/quizService';
 import { QuizRoomStatus } from '@/features/quiz/model/types';
 import { useAuth } from '@/features/auth/AuthContext';
 
-// Komponenty widoku
 import { QuizLobby } from '@/features/quiz/components/QuizLobby';
 import { QuizGameView } from '@/features/quiz/components/QuizGameView';
 import { QuizResultView } from '@/features/quiz/components/QuizResultView';
@@ -19,13 +18,8 @@ const QuizRoomPage: React.FC = () => {
     const { roomId } = useParams<{ roomId: string }>();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    
-    // FIX 1: Używamy poprawnej nazwy z Contextu (zależnie jak masz w AuthContext)
-    // Zazwyczaj jest to currentUser lub currentUserId. 
-    // Zakładam, że currentUser ma pole id.
     const { currentUser } = useAuth(); 
     
-    // --- STAN LOKALNY ---
     const [isJoined, setIsJoined] = useState(false);
     const [isHost, setIsHost] = useState(false);
     const [nickname, setNickname] = useState('');
@@ -34,10 +28,8 @@ const QuizRoomPage: React.FC = () => {
     const [isJoining, setIsJoining] = useState(false);
     const [isLoadingCheck, setIsLoadingCheck] = useState(true);
 
-    // --- STAN Z SOCKETÓW ---
     const { status, currentQuestion, participantsCount, leaderboard, finalResults } = useQuizRoomSocket(roomId || '');
 
-    // --- 1. INICJALIZACJA (AUTO-JOIN DLA HOSTA) ---
     useEffect(() => {
         if (!roomId) return;
 
@@ -45,8 +37,6 @@ const QuizRoomPage: React.FC = () => {
             try {
                 const details = await quizService.getRoomDetails(roomId);
                 
-                // FIX 1: Porównujemy ID hosta z ID zalogowanego użytkownika
-                // (Upewnij się, że currentUser.id to ten sam typ co details.hostId - string/UUID)
                 if (currentUser && details.hostId === currentUser.id) {
                     console.log("Wykryto Hosta. Automatyczne dołączanie...");
                     await quizService.joinRoom(roomId, "HOST"); 
@@ -66,9 +56,7 @@ const QuizRoomPage: React.FC = () => {
         };
 
         initRoom();
-    }, [roomId, currentUser]); // Zależność od currentUser
-
-    // --- HANDLERY ---
+    }, [roomId, currentUser]);
 
     const handleJoin = async () => {
         if (!nickname) return;
@@ -117,12 +105,9 @@ const QuizRoomPage: React.FC = () => {
         await quizService.submitAnswer(roomId, currentQuestion.questionId, optionId);
     };
 
-    // --- RENDEROWANIE ---
-
     if (!roomId) return <Alert severity="error">Brak ID pokoju</Alert>;
     if (isLoadingCheck) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 10 }} />;
 
-    // 1. EKRAN LOGOWANIA (Dla Gracza)
     if (!isJoined) {
         return (
             <Container maxWidth="sm" sx={{ mt: 8 }}>
@@ -156,7 +141,6 @@ const QuizRoomPage: React.FC = () => {
         );
     }
 
-    // 2. GŁÓWNA PĘTLA GRY
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
 
@@ -185,7 +169,6 @@ const QuizRoomPage: React.FC = () => {
                         roomId={roomId}
                         participants={leaderboard || []} 
                         onStart={handleStartGame} 
-                        // FIX 2: Usunięto participantsCount={...}, bo QuizLobby tego nie przyjmuje (liczy sam z listy)
                     />
                     {isHost && <Box mt={4}><InviteUsersPanel roomId={roomId} /></Box>}
                 </>
@@ -196,7 +179,7 @@ const QuizRoomPage: React.FC = () => {
                     question={currentQuestion as any} 
                     isHost={isHost}
                     onSubmitAnswer={handleSubmitAnswer}
-                    onFinishEarly={handleFinishQuestionManually} // <--- PODPIĘCIE
+                    onFinishEarly={handleFinishQuestionManually}
                 />
             )}
 

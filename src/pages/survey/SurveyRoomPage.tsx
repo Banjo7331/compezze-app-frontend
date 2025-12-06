@@ -7,11 +7,10 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendIcon from '@mui/icons-material/Send';
 
-// Importy z Features
 import { surveyService } from '@/features/survey/api/surveyService';
 import { SurveySubmissionForm } from '@/features/survey/components/SurveySubmissionForm';
 import { LiveResultSurveyDashboard } from '@/features/survey/components/LiveResultSurveyDashboard';
-import { RoomControlPanel } from '@/features/survey/components/RoomControlPanel'; // Importujemy Panel Hosta
+import { RoomControlPanel } from '@/features/survey/components/RoomControlPanel';
 import { InviteUsersPanel } from '@/features/survey/components/InviteUserPanel';
 
 import type { SurveyFormStructure } from '@/features/survey/model/types';
@@ -20,27 +19,23 @@ const SurveyRoomPage: React.FC = () => {
     const { roomId } = useParams<{ roomId: string }>();
     const navigate = useNavigate();
 
-    // --- STAN ---
     const [loadingState, setLoadingState] = useState<'LOADING' | 'READY' | 'ERROR'>('LOADING');
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     
-    // Dane sesji
     const [isHost, setIsHost] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [surveyForm, setSurveyForm] = useState<SurveyFormStructure | null>(null);
 
-    // --- INICJALIZACJA (JOIN) ---
     useEffect(() => {
         if (!roomId) return;
 
         const enterRoom = async () => {
             setLoadingState('LOADING');
             try {
-                // Wywołujemy idempotentny JOIN
                 const response = await surveyService.joinRoom(roomId);
                 
                 setSurveyForm(response.survey);
-                setIsHost(response.host); // Backend mówi: "To Ty jesteś szefem"
+                setIsHost(response.host);
                 setIsSubmitted(response.hasSubmitted);
                 
                 setLoadingState('READY');
@@ -55,20 +50,13 @@ const SurveyRoomPage: React.FC = () => {
         enterRoom();
     }, [roomId]);
 
-
-    // --- HANDLERY ---
     const handleSubmissionSuccess = () => setIsSubmitted(true);
     const handleSubmissionFailure = () => alert("Submission failed. Try again.");
     
-    // Handler zamknięcia pokoju (dla Hosta)
     const handleRoomClosed = () => {
         console.log("Room closed.");
-        // Możemy tu wymusić odświeżenie lub pokazać komunikat
     };
 
-
-    // --- RENDEROWANIE: LOADER / BŁĄD ---
-    
     if (!roomId) return <Container><Alert severity="error">Missing Room ID</Alert></Container>;
 
     if (loadingState === 'LOADING') {
@@ -89,19 +77,14 @@ const SurveyRoomPage: React.FC = () => {
         );
     }
 
-    // --- RENDEROWANIE: GŁÓWNY WIDOK (SMART SWITCH) ---
-
     return (
         <Container maxWidth="lg">
             <Box sx={{ my: 4 }}>
-                
-                {/* 1. WIDOK HOSTA (Pełny Dashboard) */}
                 {isHost && (
                     <Grid container spacing={4}>
-                        {/* Lewa Kolumna: Sterowanie */}
                         <Grid size={{ xs: 12, md: 4 }}>
                             <RoomControlPanel roomId={roomId} onCloseSuccess={handleRoomClosed} />
-                            <InviteUsersPanel roomId={roomId} /> {/* Panel generowania zaproszeń */}
+                            <InviteUsersPanel roomId={roomId} />
                             
                             <Box sx={{ textAlign: 'center', mt: 2 }}>
                                 <MuiButton onClick={() => navigate('/survey')} startIcon={<ArrowBackIcon />}>
@@ -110,7 +93,6 @@ const SurveyRoomPage: React.FC = () => {
                             </Box>
                         </Grid>
 
-                        {/* Prawa Kolumna: Wyniki */}
                         <Grid size={{ xs: 12, md: 8 }}>
                             <Paper elevation={3} sx={{ p: 3 }}>
                                 <Typography variant="h5" color="primary" gutterBottom>Host Dashboard</Typography>
@@ -121,11 +103,9 @@ const SurveyRoomPage: React.FC = () => {
                 )}
 
 
-                {/* 2. WIDOK UCZESTNIKA (Formularz LUB Wyniki) */}
                 {!isHost && (
                     <Container maxWidth="md">
                         {isSubmitted ? (
-                            // Uczestnik: Już wysłał -> Pokaż Wyniki
                             <Paper elevation={4} sx={{ p: 4 }}>
                                 <Stack alignItems="center" spacing={2} sx={{ mb: 3 }}>
                                     <SendIcon color="success" sx={{ fontSize: 60 }} />
@@ -141,7 +121,6 @@ const SurveyRoomPage: React.FC = () => {
                                 />
                             </Paper>
                         ) : (
-                            // Uczestnik: Jeszcze nie wysłał -> Pokaż Formularz
                             surveyForm ? (
                                 <SurveySubmissionForm
                                     roomId={roomId}

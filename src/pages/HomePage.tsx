@@ -16,4 +16,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage; // Ważny export default dla lazy loading!
+export default HomePage;

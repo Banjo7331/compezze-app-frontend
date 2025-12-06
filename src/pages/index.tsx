@@ -11,15 +11,16 @@ const RegisterPage = lazy(() => import('./auth/RegisterPage'));
 const SurveyPage = lazy(() => import('./survey/SurveyPage'));
 const SurveyCreatePage = lazy(() => import('./survey/SurveyCreatePage'));
 const SurveyRoomPage = lazy(() => import('./survey/SurveyRoomPage'));
-const SurveyParticipantPage = lazy(() => import('./survey/SurveyParticipantPage'));
 
-const QuizPage = lazy(() => import('./quiz/QuizPage')); // Strona Główna Quizów
+const QuizPage = lazy(() => import('./quiz/QuizPage'));
 const QuizCreatePage = lazy(() => import('./quiz/QuizCreatePage')); 
 const QuizRoomPage = lazy(() => import('./quiz/QuizRoomPage'));
 
 const ContestPage = lazy(() => import('./contest/ContestPage'));
 const ContestCreatePage = lazy(() => import('./contest/ContestCreatePage'));
 const ContestDetailsPage = lazy(() => import('./contest/ContestDetailsPage'));
+const ContestManagePage = lazy(() => import('./contest/ContestManagePage'));
+const ContestReviewPage = lazy(() => import('./contest/ContestReviewPage'));
 
 const ProfilePage = lazy(() => import('./user/ProfilePage'));
 
@@ -27,67 +28,43 @@ export const Routing = () => {
   return (
     <Suspense fallback={<LinearProgress sx={{ position: 'fixed', top: 0, width: '100%' }} />}>
       <Routes>
-        {/* ==================================================== */}
-        {/* 1. TRASY WYMAGAJĄCE GŁÓWNEGO LAYOUTU (Host/Auth User) */}
-        {/* ==================================================== */}
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="profile" element={<ProfilePage />} />
-          {/* Trasy Ankiet */}
           <Route path="survey">
-            {/* /survey - Lista główna */}
             <Route index element={<SurveyPage />} />
             
-            {/* /survey/create - Kreator */}
             <Route path="create" element={<SurveyCreatePage />} />
             
-            {/* /survey/room/:id - Główny widok pokoju (Host/Participant) */}
             <Route path="room/:roomId" element={<SurveyRoomPage />} />
             
-            {/* /survey/join/:id - Alias dla uczestników (ładniejszy URL) */}
-            {/* To nadal renderuje ten sam SurveyRoomPage! */}
             <Route path="join/:roomId" element={<SurveyRoomPage />} />
           </Route>
 
-          {/* Inne trasy */}
           <Route path="contest">
-            {/* Centrum Konkursów */}
             <Route index element={<ContestPage />} />
             
-            {/* Kreator Konkursu (z etapami) */}
             <Route path="create" element={<ContestCreatePage />} />
 
             <Route path=":contestId" element={<ContestDetailsPage />} />
             
-            {/* TODO: Strona szczegółów konkursu / zarządzania */}
-            {/* <Route path=":contestId" element={<ContestDetailsPage />} /> */}
+            <Route path=":contestId/manage" element={<ContestManagePage />} />
+            
+            <Route path=":contestId/review" element={<ContestReviewPage />} />
           </Route>
           <Route path="quiz">
-            {/* /quiz - Centrum Quizów */}
             <Route index element={<QuizPage />} />
             
-            {/* /quiz/create - Kreator */}
             <Route path="create" element={<QuizCreatePage />} />
             
-            {/* /quiz/room/:id - Gra (Host/Gracz) */}
             <Route path="room/:roomId" element={<QuizRoomPage />} />
             
-            {/* /quiz/join/:id - Alias dołączania */}
             <Route path="join/:roomId" element={<QuizRoomPage />} />
           </Route>
         </Route>
-
-        {/* ==================================================== */}
-        {/* 2. TRASY BEZ LAYOUTU (Logowanie, Uczestnik Ankiety) */}
-        {/* ==================================================== */}
-        
-        {/* Logowanie */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* 2. REJESTRUJEMY TRASĘ TUTAJ */}
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* 404 */}
         <Route path="*" element={<div>404 - Strony nie znaleziono</div>} />
       </Routes>
     </Suspense>

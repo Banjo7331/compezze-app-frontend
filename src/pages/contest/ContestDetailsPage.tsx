@@ -18,11 +18,9 @@ const ContestDetailsPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // --- FETCH DATA ---
     const fetchDetails = async () => {
         try {
             const data = await contestService.getContestDetails(contestId!);
-            // Sortowanie etapów (dla pewności)
             data.stages.sort((a, b) => a.position - b.position);
             setContest(data);
         } catch (e) {
@@ -36,22 +34,18 @@ const ContestDetailsPage: React.FC = () => {
         if (contestId) fetchDetails();
     }, [contestId]);
 
-    // --- ACTIONS ---
-
     const handleJoin = async () => {
         setIsProcessing(true);
         try {
             await contestService.joinContest(contestId!);
             showSuccess("Pomyślnie dołączyłeś do konkursu!");
-            fetchDetails(); // Odświeżamy, żeby zaktualizować widok (isParticipant -> true)
-        } catch (e) {
-            showError("Nie udało się dołączyć. Sprawdź limity lub status konkursu.");
+            fetchDetails();
+        } catch (e: any) {
+            showError("Nie udało się dołączyć. " + (e.response?.data?.detail || "Sprawdź limity."));
         } finally {
             setIsProcessing(false);
         }
     };
-
-    // --- RENDER ---
 
     if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 10 }} />;
     if (!contest) return <Container sx={{ mt: 4 }}><Alert severity="error">Konkurs nie istnieje.</Alert></Container>;
@@ -59,22 +53,18 @@ const ContestDetailsPage: React.FC = () => {
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             
-            {/* 1. HEADER */}
             <ContestHeader contest={contest} />
 
-            {/* 2. ACTION PANEL (Smart) */}
             <Box sx={{ mb: 4 }}>
                 <ContestActionPanel 
                     contest={contest}
                     isProcessing={isProcessing}
+                    
                     onJoin={handleJoin}
-                    onManage={() => navigate(`/contest/${contestId}/manage`)} // TODO: Strona Dashboardu Hosta
-                    onReview={() => navigate(`/contest/${contestId}/review`)} // TODO: Strona Weryfikacji
+                    onManage={() => navigate(`/contest/${contestId}/manage`)}
+                    onReview={() => navigate(`/contest/${contestId}/review`)}
                 />
             </Box>
-
-            {/* 3. INNE (np. Galeria prac - w przyszłości) */}
-
         </Container>
     );
 };

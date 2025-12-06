@@ -13,14 +13,12 @@ export interface Page<T> {
 export interface PageableParams {
     page?: number;
     size?: number;
-    sort?: string; // np. "title,asc"
+    sort?: string;
 }
 
 export const userService = {
     searchUsers: async (query: string): Promise<UserSummary[]> => {
         if (!query || query.length < 2) return [];
-        
-        // Oczekujemy Page<UserSummary>
         const response = await apiClient.get<Page<UserSummary>>('/users/search', {
             params: { 
                 query,

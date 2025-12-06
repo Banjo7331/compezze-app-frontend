@@ -7,14 +7,12 @@ import PollIcon from '@mui/icons-material/Poll';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import QuizIcon from '@mui/icons-material/Quiz';
 
-// Importujemy komponenty, które za chwilę utworzymy/zaktualizujemy
 import { MyTemplatesList } from '@/features/survey/components/MyTemplatesList';
 import { MySurveyRoomHistory } from '@/features/survey/components/MySurveyRoomHistory';
 
-import { MyQuizTemplatesList } from '@/features/quiz/components/MyQuizTemplatesList'; // <--- DODAJ
+import { MyQuizTemplatesList } from '@/features/quiz/components/MyQuizTemplatesList';
 import { MyQuizHistory } from '@/features/quiz/components/MyQuizHistory';
 
-// Placeholder dla ustawień konta (na przyszłość)
 const AccountSettings = () => (
     <Box>
         <Typography variant="h6">Ustawienia Konta</Typography>
@@ -25,7 +23,7 @@ const AccountSettings = () => (
 );
 
 export const ProfilePage: React.FC = () => {
-    const [tabValue, setTabValue] = useState(1); // Domyślnie otwórz zakładkę "Ankiety" (index 1)
+    const [tabValue, setTabValue] = useState(1);
 
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
@@ -35,13 +33,11 @@ export const ProfilePage: React.FC = () => {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Paper elevation={3} sx={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 
-                {/* NAGŁÓWEK */}
                 <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white' }}>
                     <Typography variant="h4" fontWeight="bold">Mój Profil</Typography>
                     <Typography variant="subtitle1">Centrum zarządzania Twoimi aktywnościami</Typography>
                 </Box>
 
-                {/* ZAKŁADKI */}
                 <Tabs 
                     value={tabValue} 
                     onChange={handleChange} 
@@ -55,16 +51,12 @@ export const ProfilePage: React.FC = () => {
                     <Tab icon={<EmojiEventsIcon />} label="Konkursy" iconPosition="start" disabled />
                 </Tabs>
 
-                {/* TREŚĆ */}
                 <Box sx={{ p: 3, flexGrow: 1, bgcolor: '#fafafa' }}>
                     
-                    {/* ZAKŁADKA 0: KONTO */}
                     {tabValue === 0 && <AccountSettings />}
 
-                    {/* ZAKŁADKA 1: SURVEY (ANKIETY) */}
                     {tabValue === 1 && (
                         <Box>
-                            {/* Sekcja 1: Szablony */}
                             <Typography variant="h5" gutterBottom sx={{ color: 'text.primary' }}>
                                 Moje Szablony
                             </Typography>
@@ -76,7 +68,6 @@ export const ProfilePage: React.FC = () => {
                             
                             <Divider sx={{ my: 4 }} />
                             
-                            {/* Sekcja 2: Pokoje (Sesje) */}
                             <Typography variant="h5" gutterBottom sx={{ color: 'text.primary' }}>
                                 Historia Sesji
                             </Typography>
@@ -109,7 +100,6 @@ export const ProfilePage: React.FC = () => {
                         </Box>
                     )}
 
-                    {/* ZAKŁADKI 2 i 3: Placeholder */}
                     {tabValue > 2 && (
                         <Box sx={{ textAlign: 'center', mt: 4 }}>
                             <Typography variant="h6" color="text.disabled">Moduł w trakcie budowy...</Typography>

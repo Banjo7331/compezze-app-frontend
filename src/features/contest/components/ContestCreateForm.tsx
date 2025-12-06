@@ -63,6 +63,7 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
     const [endDate, setEndDate] = useState('');
     const [participantLimit, setParticipantLimit] = useState<string>('100');
     const [isPrivate, setIsPrivate] = useState(true);
+    const [mediaPolicy, setMediaPolicy] = useState<SubmissionMediaPolicy>('BOTH');
     
     // --- STAN DLA WYSZUKIWARKI ZASOBÓW (Quiz/Survey) ---
     const [resourceOptions, setResourceOptions] = useState<{id: number, title: string}[]>([]);
@@ -176,6 +177,14 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
         e.preventDefault();
         if (stages.length === 0) { showError("Dodaj przynajmniej jeden etap."); return; }
         if (!name || !startDate || !endDate) { showError("Uzupełnij wymagane pola."); return; }
+        
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start >= end) {
+            showError("Data zakończenia musi być późniejsza niż data rozpoczęcia.");
+            return;
+        }
 
         setIsSubmitting(true);
 
@@ -228,8 +237,8 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
             participantLimit: participantLimit ? Number(participantLimit) : undefined,
             isPrivate,
             hasPreliminaryStage: false,
-            submissionMediaPolicy: 'BOTH',
-            templateId: "default-template", // Placeholder dla MinIO
+            submissionMediaPolicy: mediaPolicy,
+            templateId: "default-template",
             stages: mappedStages
         };
 
@@ -288,6 +297,21 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 6 }}>
                                     <TextField label="Limit uczestników" type="number" fullWidth value={participantLimit} onChange={e => setParticipantLimit(e.target.value)} />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 4 }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Dozwolone Media</InputLabel>
+                                        <Select 
+                                            value={mediaPolicy} 
+                                            label="Dozwolone Media" 
+                                            onChange={e => setMediaPolicy(e.target.value as any)}
+                                        >
+                                            <MenuItem value="BOTH">Zdjęcia i Wideo</MenuItem>
+                                            <MenuItem value="IMAGES_ONLY">Tylko Zdjęcia</MenuItem>
+                                            <MenuItem value="VIDEOS_ONLY">Tylko Wideo</MenuItem>
+                                            <MenuItem value="NONE">Brak</MenuItem>
+                                        </Select>
+                                    </FormControl>
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 6 }}>
                                     <FormControlLabel control={<Switch checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)} />} label="Konkurs Prywatny" />

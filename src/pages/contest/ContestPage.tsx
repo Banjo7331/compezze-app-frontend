@@ -2,7 +2,7 @@ import React from 'react';
 import { Typography, Container, Box, Paper, Grid } from '@mui/material';
 import type { ButtonProps } from '@mui/material'; 
 import AddIcon from '@mui/icons-material/Add';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'; // Ikona pucharu
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { Button } from '@/shared/ui/Button'; 
 import { Link } from 'react-router-dom';
 import type { LinkProps } from 'react-router-dom'; 
@@ -10,14 +10,12 @@ import type { LinkProps } from 'react-router-dom';
 import { UpcomingContestWidget } from '@/features/contest/components/UpcomingContestWidget';
 
 const ContestPage: React.FC = () => {
-    // Hack dla TS
     const LinkButton = Button as React.ComponentType<ButtonProps & Pick<LinkProps, 'to'>>;
 
     return (
         <Container maxWidth="lg">
             <Box sx={{ my: 4 }}>
                 <UpcomingContestWidget />
-                {/* NAGŁÓWEK */}
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
                     <Typography variant="h3" component="h1" gutterBottom fontWeight="bold" color="secondary">
                         <EmojiEventsIcon sx={{ fontSize: 50, verticalAlign: 'middle', mr: 2 }} />
@@ -30,7 +28,6 @@ const ContestPage: React.FC = () => {
 
                 <Grid container spacing={4} justifyContent="center">
                     
-                    {/* LEWA: UTWÓRZ NOWY KONKURS */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Paper 
                             elevation={6} 
@@ -41,7 +38,7 @@ const ContestPage: React.FC = () => {
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
-                                backgroundColor: '#f3e5f5', // Fioletowy odcień (Secondary)
+                                backgroundColor: '#f3e5f5',
                                 borderRadius: 3,
                                 minHeight: 300 
                             }}
@@ -67,7 +64,6 @@ const ContestPage: React.FC = () => {
                         </Paper>
                     </Grid>
 
-                    {/* DÓŁ: Placeholder na aktywne konkursy (na razie pusty) */}
                     <Grid size={{ xs: 12 }}>
                         <Box sx={{ mt: 8, textAlign: 'center', borderTop: '1px dashed #ccc', pt: 4 }}>
                             <Typography variant="h5" color="text.disabled" gutterBottom>

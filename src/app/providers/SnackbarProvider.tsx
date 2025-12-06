@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Snackbar, Alert } from '@mui/material';
 import type { AlertColor } from '@mui/material/Alert';
 
-// Typy funkcji, których będziemy używać w komponentach
 interface SnackbarContextType {
   showNotification: (message: string, severity?: AlertColor) => void;
   showSuccess: (message: string) => void;
@@ -21,14 +20,12 @@ export const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setOpen(false);
   };
 
-  // Główna funkcja pokazująca powiadomienie
   const showNotification = useCallback((msg: string, sev: AlertColor = 'info') => {
     setMessage(msg);
     setSeverity(sev);
     setOpen(true);
   }, []);
 
-  // Skróty dla wygody (to ich używamy w kodzie)
   const showSuccess = useCallback((msg: string) => showNotification(msg, 'success'), [showNotification]);
   const showError = useCallback((msg: string) => showNotification(msg, 'error'), [showNotification]);
 
@@ -36,10 +33,9 @@ export const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <SnackbarContext.Provider value={{ showNotification, showSuccess, showError }}>
       {children}
       
-      {/* To jest sam dymek, który "czeka" na aktywację */}
       <Snackbar 
         open={open} 
-        autoHideDuration={6000} // Znika po 6 sekundach
+        autoHideDuration={6000}
         onClose={handleClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
@@ -51,7 +47,6 @@ export const SnackbarProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 };
 
-// Hook, który importujemy w komponentach
 export const useSnackbar = () => {
   const context = useContext(SnackbarContext);
   if (!context) {

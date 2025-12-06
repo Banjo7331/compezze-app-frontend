@@ -12,7 +12,6 @@ const NavBar: React.FC = () => {
     const { isAuthenticated, logout, currentUser } = useAuth(); 
     const navigate = useNavigate();
     
-    // Stan dla menu użytkownika
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
     const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -25,7 +24,7 @@ const NavBar: React.FC = () => {
 
     const handleProfileClick = () => {
         handleCloseUserMenu();
-        navigate('/profile'); // <-- PRZEKIEROWANIE NA NOWY PROFIL
+        navigate('/profile');
     };
 
     const handleLogout = () => {
@@ -43,7 +42,6 @@ const NavBar: React.FC = () => {
     return (
         <AppBar position="static" color="primary">
             <Toolbar>
-                {/* 1. LOGO */}
                 <Typography
                     variant="h6"
                     component={Link}
@@ -53,7 +51,6 @@ const NavBar: React.FC = () => {
                     Compezze Platform
                 </Typography>
 
-                {/* 2. NAWIGACJA GŁÓWNA */}
                 <Box sx={{ display: 'flex', gap: 2, flexGrow: 1 }}>
                     {navItems.map((item) => (
                         <Button
@@ -71,7 +68,6 @@ const NavBar: React.FC = () => {
                     ))}
                 </Box>
 
-                {/* 3. SEKCJA UŻYTKOWNIKA (Dropdown) */}
                 <Box sx={{ flexGrow: 0 }}>
                     {isAuthenticated ? (
                         <>
@@ -101,7 +97,6 @@ const NavBar: React.FC = () => {
                                 
                                 <Divider />
                                 
-                                {/* --- LINK DO PROFILU --- */}
                                 <MenuItem onClick={handleProfileClick}>
                                     <Typography textAlign="center">Mój Profil</Typography>
                                 </MenuItem>
