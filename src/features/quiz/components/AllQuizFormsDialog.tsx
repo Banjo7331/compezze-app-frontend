@@ -15,7 +15,6 @@ export const AllQuizFormsDialog: React.FC<AllQuizFormsDialogProps> = ({ open, on
             onClose={onClose} 
             maxWidth="md" 
             fullWidth
-            // 'scroll="paper"' sprawia, że scrolluje się tylko środek okna, a nagłówek zostaje w miejscu
             scroll="paper" 
             PaperProps={{
                 sx: {
@@ -24,7 +23,6 @@ export const AllQuizFormsDialog: React.FC<AllQuizFormsDialogProps> = ({ open, on
                 }
             }}
         >
-            {/* Nagłówek Dialogu */}
             <DialogTitle component="div" sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f5f5f5' }}>
                 <Typography variant="h6" component="h2" fontWeight="bold">
                     Wszystkie Dostępne Quizy
@@ -34,9 +32,7 @@ export const AllQuizFormsDialog: React.FC<AllQuizFormsDialogProps> = ({ open, on
                 </IconButton>
             </DialogTitle>
             
-            {/* Treść (Lista) */}
             <DialogContent dividers sx={{ p: 0 }}>
-                {/* Box z paddingiem wewnątrz, żeby scrollbar był ładnie dosunięty do krawędzi */}
                 <AllQuizTemplatesList />
             </DialogContent>
         </Dialog>

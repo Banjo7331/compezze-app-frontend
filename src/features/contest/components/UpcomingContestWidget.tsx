@@ -3,7 +3,7 @@ import { Box, Paper, Typography, Chip, Skeleton, Stack } from '@mui/material';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ListIcon from '@mui/icons-material/List'; // <--- NOWA IKONA
+import ListIcon from '@mui/icons-material/List';
 
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/Button';
@@ -17,7 +17,6 @@ export const UpcomingContestWidget: React.FC = () => {
     const [contest, setContest] = useState<UpcomingContestDto | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     
-    // Stan dialogu
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     useEffect(() => {
@@ -87,9 +86,7 @@ export const UpcomingContestWidget: React.FC = () => {
                     </Stack>
                 </Box>
 
-                {/* SEKCJA PRZYCISKÓW */}
                 <Stack direction="row" spacing={2}>
-                    {/* PRZYCISK "WIĘCEJ" */}
                     <Button 
                         variant="outlined" 
                         onClick={() => setIsDialogOpen(true)}
@@ -103,7 +100,6 @@ export const UpcomingContestWidget: React.FC = () => {
                         INNE
                     </Button>
 
-                    {/* PRZYCISK GŁÓWNY */}
                     <Button 
                         variant="contained" 
                         size="large"
@@ -121,7 +117,6 @@ export const UpcomingContestWidget: React.FC = () => {
                 </Stack>
             </Paper>
 
-            {/* DIALOG Z LISTĄ */}
             <MyEnteredContestsDialog 
                 open={isDialogOpen} 
                 onClose={() => setIsDialogOpen(false)} 

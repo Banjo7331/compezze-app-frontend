@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Grid, LinearProgress, Alert } from '@mui/material';
 import { Button } from '@/shared/ui/Button';
 
-// DTO opcji (musisz upewnić się, że backend to wysyła w NewQuestionSocketMessage!)
 interface OptionDto {
     id: number;
     text: string;
@@ -27,7 +26,6 @@ export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, on
     const [timeLeft, setTimeLeft] = useState(0);
     const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
 
-    // Timer
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
@@ -47,7 +45,6 @@ export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, on
 
     return (
         <Box sx={{ maxWidth: 900, mx: 'auto', mt: 4 }}>
-            {/* Pasek Czasu */}
             <Box sx={{ mb: 3 }}>
                 <Typography variant="overline" align="center" display="block">
                     Pytanie {question.questionIndex + 1}
@@ -63,14 +60,12 @@ export const QuizGameView: React.FC<QuizGameViewProps> = ({ question, isHost, on
                 </Typography>
             </Box>
 
-            {/* Treść Pytania */}
             <Paper elevation={4} sx={{ p: 5, mb: 5, textAlign: 'center', borderRadius: 3 }}>
                 <Typography variant="h4" fontWeight="bold">
                     {question.title}
                 </Typography>
             </Paper>
 
-            {/* Opcje */}
             <Grid container spacing={3}>
                 {question.options.map((opt) => (
                     <Grid size={{ xs: 12, md: 6 }} key={opt.id}>

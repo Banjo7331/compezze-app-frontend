@@ -1,7 +1,5 @@
 import type { FinalRoomResultDto } from './socket.types';
 
-// --- ENUMS ---
-// Używamy obiektu 'as const' zamiast enum, żeby uniknąć błędów 'erasableSyntaxOnly'
 export const QuestionType = {
     SINGLE_CHOICE: 'SINGLE_CHOICE',
     MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
@@ -12,17 +10,15 @@ export type QuestionType = typeof QuestionType[keyof typeof QuestionType];
 export const QuizRoomStatus = {
     LOBBY: 'LOBBY',
     QUESTION_ACTIVE: 'QUESTION_ACTIVE',
-    QUESTION_FINISHED: 'QUESTION_FINISHED', // Czas minął, przerwa
-    LEADERBOARD: 'LEADERBOARD', // Opcjonalnie, jeśli masz taki stan
+    QUESTION_FINISHED: 'QUESTION_FINISHED',
+    LEADERBOARD: 'LEADERBOARD',
     FINISHED: 'FINISHED'
 } as const;
 export type QuizRoomStatus = typeof QuizRoomStatus[keyof typeof QuizRoomStatus];
 
-// --- FORMULARZE (Tworzenie i Wyświetlanie) ---
-
 export interface QuizOption {
     text: string;
-    isCorrect: boolean; // Ważne przy tworzeniu (ukryte przy graniu)
+    isCorrect: boolean;
 }
 
 export interface QuizQuestion {
@@ -32,14 +28,12 @@ export interface QuizQuestion {
     options: QuizOption[];
 }
 
-// Request do tworzenia Quizu
 export interface CreateQuizFormRequest {
     title: string;
     isPrivate: boolean;
     questions: QuizQuestion[];
 }
 
-// Lista "Moje Szablony"
 export interface MyQuizFormDto {
     id: number;
     title: string;
@@ -48,15 +42,12 @@ export interface MyQuizFormDto {
     questionsCount: number;
 }
 
-// Lista Publiczna (Feed)
 export interface GetQuizFormSummaryResponse {
     id: number;
     title: string;
     isPrivate: boolean;
     creatorId: string;
 }
-
-// --- POKOJE (ROOMS) ---
 
 export interface CreateQuizRoomRequest {
     quizFormId: number;
@@ -71,7 +62,6 @@ export interface CreateQuizRoomResponse {
     quizTitle: string;
 }
 
-// Odpowiedź przy JOIN (Bezpieczna - bez pytań)
 export interface JoinQuizRoomResponse {
     participantId: number;
     host: boolean;
@@ -121,7 +111,6 @@ export interface MyQuizRoomDto {
     totalSubmissions: number;
 }
 
-// Lista "Active Rooms"
 export interface GetActiveQuizRoomResponse {
     roomId: string;
     quizTitle: string;
@@ -131,9 +120,6 @@ export interface GetActiveQuizRoomResponse {
     status: QuizRoomStatus;
 }
 
-// --- GAMEPLAY ---
-
-// Odpowiedź po wysłaniu strzału (wynik natychmiastowy)
 export interface SubmitAnswerResponse {
     correct: boolean;
     pointsAwarded: number;

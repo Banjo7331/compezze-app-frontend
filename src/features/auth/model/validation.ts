@@ -1,12 +1,10 @@
 import * as yup from 'yup';
 
-// Schemat Logowania
 export const loginSchema = yup.object({
   usernameOrEmail: yup.string().required('Nazwa użytkownika lub email jest wymagana.'),
   password: yup.string().required('Hasło jest wymagane.'),
 }).required();
 
-// Schemat Rejestracji
 export const registerSchema = yup.object({
   username: yup.string()
     .required('Nazwa użytkownika jest wymagana.')

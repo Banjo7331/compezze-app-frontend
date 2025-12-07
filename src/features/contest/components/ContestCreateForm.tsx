@@ -15,7 +15,7 @@ import PollIcon from '@mui/icons-material/Poll';
 import GavelIcon from '@mui/icons-material/Gavel';
 import PublicIcon from '@mui/icons-material/Public';
 import CategoryIcon from '@mui/icons-material/Category';
-import { debounce } from '@mui/material/utils'; // <--- Dodano debounce
+import { debounce } from '@mui/material/utils';
 
 import { Button } from '@/shared/ui/Button';
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
@@ -28,16 +28,13 @@ import {
 import { quizService } from '@/features/quiz/api/quizService';
 import { surveyService } from '@/features/survey/api/surveyService';
 
-// --- TYP POMOCNICZY (Draft) ---
-// Służy do trzymania stanu w formularzu (wszystkie pola opcjonalne)
 interface StageDraft {
     tempId: number;
     name: string;
     type: StageType;
     durationMinutes: number;
     
-    // Pola specyficzne (wspólne worki na dane)
-    referenceId?: number; // ID Quizu lub Ankiety
+    referenceId?: number;
     weight?: number;
     maxScore?: number;
     maxParticipants?: number;
@@ -54,7 +51,6 @@ interface ContestCreateFormProps {
 export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, onSuccess }) => {
     const { showSuccess, showError } = useSnackbar();
 
-    // --- Stan Formularza ---
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
@@ -65,17 +61,14 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
     const [isPrivate, setIsPrivate] = useState(true);
     const [mediaPolicy, setMediaPolicy] = useState<SubmissionMediaPolicy>('BOTH');
     
-    // --- STAN DLA WYSZUKIWARKI ZASOBÓW (Quiz/Survey) ---
     const [resourceOptions, setResourceOptions] = useState<{id: number, title: string}[]>([]);
     const [isSearchingResource, setIsSearchingResource] = useState(false)
 
-    // Stan wybranego obiektu w Autocomplete (dla ładnego wyświetlania nazwy)
     const [selectedResource, setSelectedResource] = useState<{id: number, title: string} | null>(null);
 
     const [stages, setStages] = useState<StageDraft[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- Stan Dialogu Dodawania Etapu ---
     const [isStageDialogOpen, setIsStageDialogOpen] = useState(false);
     const [newStage, setNewStage] = useState<StageDraft>({
         tempId: 0, name: '', type: 'QUIZ', durationMinutes: 30, 
@@ -83,7 +76,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
         juryRevealMode: 'IMMEDIATE', showJudgeNames: true, referenceId: 0
     });
 
-    // --- HANDLERY ETAPÓW ---
     const moveStage = (index: number, direction: -1 | 1) => {
         const newStages = [...stages];
         const temp = newStages[index];
@@ -115,7 +107,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
     );
 
     const handleOpenAddStage = () => {
-        // Reset stanu dialogu
         setNewStage({
             tempId: Date.now(),
             name: '',
@@ -141,11 +132,9 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
         }
         setIsSearchingResource(true);
         
-        // Wywołujemy debounce
         fetchResources(newInputValue, newStage.type, (results) => {
-            // Mapujemy wyniki na wspólny format {id, title}
             const options = results.map(r => ({
-                id: r.id || r.surveyFormId, // Quiz ma id, Survey ma surveyFormId (zależy od DTO)
+                id: r.id || r.surveyFormId,
                 title: r.title
             }));
             setResourceOptions(options);
@@ -164,7 +153,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
         if (!newStage.name) { showError("Nazwa etapu wymagana"); return; }
         if (!newStage.durationMinutes || newStage.durationMinutes < 1) { showError("Czas trwania musi być > 0"); return; }
         
-        // Walidacja specyficzna
         if (newStage.type === 'QUIZ' && !newStage.referenceId) { showError("Podaj ID Szablonu Quizu"); return; }
         if (newStage.type === 'SURVEY' && !newStage.referenceId) { showError("Podaj ID Szablonu Ankiety"); return; }
 
@@ -172,7 +160,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
         setIsStageDialogOpen(false);
     };
 
-    // --- SUBMIT ---
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (stages.length === 0) { showError("Dodaj przynajmniej jeden etap."); return; }
@@ -188,7 +175,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
 
         setIsSubmitting(true);
 
-        // 1. Mapowanie Draft -> DTO (Polimorfizm)
         const mappedStages: StageRequest[] = stages.map((s) => {
             const base = { name: s.name, durationMinutes: s.durationMinutes };
             
@@ -226,7 +212,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
             }
         });
 
-        // 2. Budowanie Głównego Requestu
         const payload: CreateContestRequest = {
             name, 
             description, 
@@ -271,7 +256,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                 
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={4}>
-                        {/* DANE PODSTAWOWE */}
                         <Box sx={{ p: 2, bgcolor: '#f9f9f9', borderRadius: 2 }}>
                             <Typography variant="h6" gutterBottom>Informacje Podstawowe</Typography>
                             <Grid container spacing={2}>
@@ -321,7 +305,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
 
                         <Divider />
 
-                        {/* ETAPY */}
                         <Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography variant="h5">Etapy ({stages.length})</Typography>
@@ -357,7 +340,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                             </Stack>
                         </Box>
 
-                        {/* SUBMIT */}
                         <Stack direction="row" spacing={2} justifyContent="flex-end">
                             <Button onClick={onCancel} color="inherit">Anuluj</Button>
                             <Button type="submit" variant="contained" size="large" disabled={isSubmitting} startIcon={isSubmitting ? <CircularProgress size={20}/> : <SaveIcon />}>
@@ -367,7 +349,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                     </Stack>
                 </form>
 
-                {/* DIALOG DODAWANIA ETAPU */}
                 <Dialog open={isStageDialogOpen} onClose={() => setIsStageDialogOpen(false)} maxWidth="sm" fullWidth>
                     <DialogTitle>Dodaj Nowy Etap</DialogTitle>
                     <DialogContent dividers>
@@ -379,7 +360,7 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                                 <Select 
                                     value={newStage.type} 
                                     label="Typ Etapu"
-                                    onChange={handleTypeChange} // Używamy nowego handlera
+                                    onChange={handleTypeChange}
                                 >
                                     <MenuItem value="QUIZ">Quiz (Gra na żywo)</MenuItem>
                                     <MenuItem value="SURVEY">Ankieta (Opinie)</MenuItem>
@@ -390,21 +371,18 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                             </FormControl>
                             <TextField label="Czas trwania (min)" type="number" fullWidth value={newStage.durationMinutes} onChange={e => setNewStage({...newStage, durationMinutes: Number(e.target.value)})} />
                             
-                            {/* --- WYSZUKIWARKA QUIZU / ANKIETY --- */}
                             {(newStage.type === 'QUIZ' || newStage.type === 'SURVEY') && (
                                 <Autocomplete
                                     options={resourceOptions}
                                     getOptionLabel={(option) => option.title}
-                                    filterOptions={(x) => x} // Wyłączamy lokalne filtrowanie (robi to backend)
+                                    filterOptions={(x) => x}
                                     value={selectedResource}
                                     
-                                    // Zmiana wartości (kliknięcie w opcję)
                                     onChange={(event: any, newValue: any | null) => {
                                         setSelectedResource(newValue);
                                         setNewStage({ ...newStage, referenceId: newValue ? newValue.id : 0 });
                                     }}
                                     
-                                    // Zmiana tekstu (wpisywanie)
                                     onInputChange={handleResourceSearch}
                                     
                                     loading={isSearchingResource}
@@ -429,8 +407,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                                 />
                             )}
                             
-                            {/* --- POLA DLA QUIZU --- */}
-                            {/* Pozostałe pola (Quiz czas, Wagi itd.) - BEZ ZMIAN */}
                             {newStage.type === 'QUIZ' && (
                                 <>
                                     <Stack direction="row" spacing={2}>
@@ -441,8 +417,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                                 </>
                             )}
 
-                             {/* --- POLA DLA ANKIETY --- */}
-                            {/* 4. USTAWIENIA SPECYFICZNE DLA ANKIETY */}
                             {newStage.type === 'SURVEY' && (
                                 <TextField 
                                     label="Limit uczestników" type="number" fullWidth 
@@ -451,7 +425,6 @@ export const ContestCreateForm: React.FC<ContestCreateFormProps> = ({ onCancel, 
                                 />
                             )}
 
-                            {/* --- POLA DLA GŁOSOWAŃ --- */}
                             {(newStage.type === 'JURY_VOTE' || newStage.type === 'PUBLIC_VOTE') && (
                                 <Stack direction="row" spacing={2}>
                                     <TextField label="Max Ocena" type="number" fullWidth value={newStage.maxScore} onChange={e => setNewStage({...newStage, maxScore: Number(e.target.value)})} />

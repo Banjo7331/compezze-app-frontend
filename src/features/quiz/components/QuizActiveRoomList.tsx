@@ -6,7 +6,7 @@ import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import { useNavigate } from 'react-router-dom';
 
 import { quizService } from '../api/quizService';
-import type { GetActiveQuizRoomResponse } from '../model/types'; // Upewnij się, że importujesz typ, a nie wartość (jeśli to enum)
+import type { GetActiveQuizRoomResponse } from '../model/types';
 
 export const QuizActiveRoomsList: React.FC = () => {
     const navigate = useNavigate();
@@ -22,7 +22,6 @@ export const QuizActiveRoomsList: React.FC = () => {
         const fetchRooms = async () => {
             setIsLoading(true);
             try {
-                // Pobieramy aktywne pokoje quizowe
                 const data = await quizService.getActiveRooms({ page, size: 10, sort: 'createdAt,desc' });
                 setRooms(data.content);
                 setTotalPages(data.totalPages);
@@ -63,7 +62,7 @@ export const QuizActiveRoomsList: React.FC = () => {
                         elevation={2} 
                         sx={{ 
                             p: 2, 
-                            borderLeft: '6px solid #ed6c02', // Kolor pomarańczowy (warning)
+                            borderLeft: '6px solid #ed6c02',
                             display: 'flex', 
                             justifyContent: 'space-between', 
                             alignItems: 'center' 
@@ -76,7 +75,6 @@ export const QuizActiveRoomsList: React.FC = () => {
                             </Typography>
                             
                             <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-                                {/* Status */}
                                 <Chip 
                                     label={room.status === 'LOBBY' ? "W POCZEKALNI" : "GRA TRWA"} 
                                     color={room.status === 'LOBBY' ? "success" : "warning"} 
@@ -84,7 +82,6 @@ export const QuizActiveRoomsList: React.FC = () => {
                                     variant="outlined"
                                 />
 
-                                {/* Liczba graczy */}
                                 <Chip 
                                     icon={<PersonIcon />} 
                                     label={`${room.participantsCount} / ${room.maxParticipants || '∞'}`} 
@@ -100,7 +97,7 @@ export const QuizActiveRoomsList: React.FC = () => {
                         
                         <Button 
                             variant="contained" 
-                            color="warning" // Tutaj warning zadziała (Button obsługuje)
+                            color="warning"
                             onClick={() => navigate(`/quiz/join/${room.roomId}`)}
                         >
                             DOŁĄCZ
@@ -115,7 +112,7 @@ export const QuizActiveRoomsList: React.FC = () => {
                         count={totalPages} 
                         page={page + 1} 
                         onChange={handlePageChange} 
-                        color="primary" // <--- FIX: Zmieniono na 'primary', bo 'warning' nie jest wspierany przez Pagination
+                        color="primary"
                     />
                 </Box>
             )}

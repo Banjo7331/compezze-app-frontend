@@ -8,27 +8,22 @@ import type { LoginRequest } from '../model/types';
 import { useLogin } from '../hooks/useLogin';
 
 export const LoginForm = () => {
-    // 1. Hook do logowania. Destrukturyzujemy login, isLoading, i error (już jako string)
     const { 
         login, 
         isLoading, 
-        error // Ten error jest już czystym stringiem lub nullem, dzięki useLogin.ts
+        error
     } = useLogin(); 
 
-    // 2. Hook do formularza
     const {
         control,
         handleSubmit,
         formState: { errors },
     } = useForm<LoginRequest>({ 
         resolver: yupResolver(loginSchema),
-        // Używamy nazwy pola zgodnej z DTO
         defaultValues: { usernameOrEmail: '', password: '' }, 
     });
 
-    // 3. Funkcja wywoływana po poprawnej walidacji
     const onSubmit = (data: LoginRequest) => {
-        // Wywołujemy funkcję login. Cała logika uwierzytelniania i zarządzania tokenami jest w useLogin.ts.
         login(data); 
     };
 
@@ -39,15 +34,10 @@ export const LoginForm = () => {
             sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: 300 }}
         >
             <Typography variant="h5">Zaloguj się</Typography>
-
-            {/* Wyświetlanie ogólnego błędu logowania (np. złe hasło) */}
-            {/* FIX: Błąd jest przekazywany jako string przez hook. */}
             {error && (
-                // Zastąp "Niepoprawny email lub hasło." komunikatem z hooka/backendu
                 <Alert severity="error">{error}</Alert> 
             )}
 
-            {/* Pole Nazwa użytkownika/Email */}
             <Controller
                 name="usernameOrEmail"
                 control={control}
@@ -62,7 +52,6 @@ export const LoginForm = () => {
                 )}
             />
 
-            {/* Pole Hasło */}
             <Controller
                 name="password"
                 control={control}
@@ -78,7 +67,6 @@ export const LoginForm = () => {
                 )}
             />
 
-            {/* Przycisk Logowania */}
             <Button
                 type="submit"
                 disabled={isLoading} 

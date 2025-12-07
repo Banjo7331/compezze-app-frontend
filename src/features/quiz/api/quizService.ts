@@ -73,7 +73,6 @@ export const quizService = {
         await apiClient.post(`${BASE_URL}/room/${roomId}/close`);
     },
     submitAnswer: async (roomId: string, questionId: number, selectedOptionId: number) => {
-        // Zwraca SubmitAnswerResponse (z informacją czy poprawnie i ile punktów)
         const response = await apiClient.post<SubmitAnswerResponse>(`${BASE_URL}/room/${roomId}/submit`, {
             questionId,
             selectedOptionId

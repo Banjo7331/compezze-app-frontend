@@ -12,34 +12,28 @@ import { surveyService } from '../api/surveyService';
 import type { CreateRoomRequest } from '../model/types';
 import { Button } from '@/shared/ui/Button';
 
-// Importy dialogów
 import { AllFormsDialog } from './AllFormsDialog';
 import { StartSurveyRoomDialog } from './StartSurveyRoomDialog';
 
 export const FeaturedTemplatesWidget: React.FC = () => {
     const navigate = useNavigate();
     
-    // Stan dla listy wszystkich
     const [isAllFormsDialogOpen, setIsAllFormsDialogOpen] = useState(false);
     
-    // Stan dla startu pokoju
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
     
-    // Dane z API (limit 3)
     const { data, isLoading, error } = useUserSurveyForms({ 
         size: 3, 
         sort: 'id,desc' 
     });
 
-    // 1. Otwieranie dialogu startu
     const handleOpenStartDialog = (id: number) => {
         setSelectedFormId(id);
         setStartDialogOpen(true);
     };
 
-    // 2. Logika tworzenia pokoju (po potwierdzeniu w dialogu)
     const handleConfirmStart = async (config: { duration: number, maxParticipants: number }) => {
         if (!selectedFormId) return;
 
@@ -51,10 +45,8 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                 durationMinutes: config.duration
             };
             const result = await surveyService.createRoom(request);
-            // showSuccess("Pokój uruchomiony!"); // Opcjonalnie
             navigate(`/survey/room/${result.roomId}`);
         } catch (e) {
-            // showError("Nie udało się uruchomić pokoju."); // Opcjonalnie
             alert("Failed to launch room");
             setIsStarting(false);
         }
@@ -106,7 +98,7 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                                 variant="contained"
                                 color="success"
                                 startIcon={<PlayArrowIcon />}
-                                onClick={() => handleOpenStartDialog(survey.surveyFormId!)} // <--- ZMIANA
+                                onClick={() => handleOpenStartDialog(survey.surveyFormId!)}
                                 sx={{ minWidth: 'auto', px: 2 }}
                             >
                                 Start
@@ -128,9 +120,6 @@ export const FeaturedTemplatesWidget: React.FC = () => {
                     </Button>
                 </Box>
             </Paper>
-
-            {/* --- DIALOGI --- */}
-            
             <AllFormsDialog 
                 open={isAllFormsDialogOpen} 
                 onClose={() => setIsAllFormsDialogOpen(false)} 

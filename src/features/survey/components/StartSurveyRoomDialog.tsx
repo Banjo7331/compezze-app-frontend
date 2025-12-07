@@ -13,15 +13,12 @@ interface StartRoomDialogProps {
 }
 
 export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, onClose, onConfirm, isLoading }) => {
-    // Wartości
     const [duration, setDuration] = useState<string>('15');
     const [maxParticipants, setMaxParticipants] = useState<string>('100');
 
-    // Stany błędów (treść błędu lub null)
     const [durationError, setDurationError] = useState<string | null>(null);
     const [participantsError, setParticipantsError] = useState<string | null>(null);
 
-    // Resetowanie stanu przy otwarciu
     useEffect(() => {
         if (open) {
             setDuration('90');
@@ -31,7 +28,6 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
         }
     }, [open]);
 
-    // --- WALIDACJA CZASU ---
     const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setDuration(val);
@@ -44,11 +40,10 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
         } else if (num > 90) {
             setDurationError("Maksymalnie 90 minut");
         } else {
-            setDurationError(null); // Jest OK
+            setDurationError(null);
         }
     };
 
-    // --- WALIDACJA UCZESTNIKÓW ---
     const handleParticipantsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setMaxParticipants(val);
@@ -61,12 +56,11 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
         } else if (num > 1000) {
             setParticipantsError("Maksymalnie 1000 uczestników (limit serwera)");
         } else {
-            setParticipantsError(null); // Jest OK
+            setParticipantsError(null); 
         }
     };
 
     const handleSubmit = () => {
-        // Ostateczna blokada przed wysłaniem błędnych danych
         if (durationError || participantsError || !duration || !maxParticipants) return;
 
         onConfirm({ 
@@ -75,7 +69,6 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
         });
     };
 
-    // Czy przycisk powinien być aktywny?
     const isValid = !durationError && !participantsError && duration !== '' && maxParticipants !== '';
 
     return (
@@ -91,7 +84,6 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
                         Skonfiguruj parametry pokoju. Po uruchomieniu sesja będzie aktywna przez określony czas.
                     </Typography>
 
-                    {/* CZAS TRWANIA */}
                     <TextField
                         label="Czas trwania (minuty)"
                         type="number"
@@ -99,14 +91,12 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
                         value={duration}
                         onChange={handleDurationChange}
                         
-                        // --- WALIDACJA WIZUALNA ---
-                        error={!!durationError} // To robi czerwoną ramkę
+                        error={!!durationError}
                         helperText={durationError || "Domyślnie 90 minut. Po tym czasie pokój zostanie zamknięty."}
                         
                         InputProps={{ inputProps: { min: 1, max: 90 } }}
                     />
 
-                    {/* UCZESTNICY */}
                     <TextField
                         label="Limit uczestników"
                         type="number"
@@ -114,8 +104,7 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
                         value={maxParticipants}
                         onChange={handleParticipantsChange}
                         
-                        // --- WALIDACJA WIZUALNA ---
-                        error={!!participantsError} // To robi czerwoną ramkę
+                        error={!!participantsError}
                         helperText={participantsError || "Maksymalna liczba osób, które mogą dołączyć (max 1000)."}
                         
                         InputProps={{ inputProps: { min: 1, max: 1000 } }}
@@ -131,7 +120,6 @@ export const StartSurveyRoomDialog: React.FC<StartRoomDialogProps> = ({ open, on
                     onClick={handleSubmit} 
                     variant="contained" 
                     color="success"
-                    // Blokujemy przycisk, jeśli są błędy
                     disabled={isLoading || !isValid}
                 >
                     {isLoading ? "Uruchamianie..." : "Start"}

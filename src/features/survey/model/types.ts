@@ -1,27 +1,19 @@
-// --- ENUMS/TYPES ---
 import type { FinalRoomResultDto } from 'src/features/survey/model/socket.types';
 
-// 1. Zdefiniuj wszystkie możliwe wartości jako Union Type
 export type QuestionType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'OPEN_TEXT';
 
-// 2. Opcjonalnie: Utwórz obiekt mapujący, jeśli potrzebujesz tych wartości w kodzie JS (runtime).
-// W Twoim formularzu używaliśmy wartości bezpośrednio, więc to powinno wystarczyć.
 export const QuestionTypeValues: Record<QuestionType, QuestionType> = {
     SINGLE_CHOICE: 'SINGLE_CHOICE',
     MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
     OPEN_TEXT: 'OPEN_TEXT',
 };
 
-// --- REQUEST DTOs ---
-
-// Wydzielenie typu dla pojedynczego pytania
 export interface CreateQuestionRequest {
     title: string;
-    type: QuestionType; // Używa typu QuestionType
+    type: QuestionType;
     possibleChoices: string[];
 }
 
-// DTO do tworzenia nowej Ankiety
 export interface CreateSurveyFormRequest {
     title: string;
     isPrivate: boolean;
@@ -34,9 +26,6 @@ export interface CreateRoomRequest {
     durationMinutes?: number;
 }
 
-// --- RESPONSE DTOs ---
-
-// Typy Odpowiedzi REST
 export interface SurveyFormResponse {
     surveyFormId: number;
     title: string;
@@ -57,7 +46,6 @@ export interface SurveyFormStructure {
     questions: GetQuestionResponse[];
 }
 
-// Typ pytania w odpowiedzi
 export interface GetQuestionResponse {
     id: number;
     title: string;
@@ -88,8 +76,8 @@ export interface SurveyRoomDetailsResponse {
 }
 
 export interface SubmitParticipantAnswerRequest {
-    questionId: number; // Long -> number
-    answers: string[];  // List<String> -> string[]
+    questionId: number;
+    answers: string[];
 }
 
 export interface MySurveyFormDto {
@@ -112,17 +100,15 @@ export interface MySurveyRoomDto {
 }
 
 export interface SubmitSurveyAttemptRequest {
-    surveyId: number;   // Long -> number (ID definicji ankiety, nie pokoju!)
+    surveyId: number;
     participantAnswers: SubmitParticipantAnswerRequest[];
 }
 
-// --- WebSocket Types ---
 export interface WSMessage {
     event?: string;
     newParticipantCount?: number;
     participantUserId?: string;
     currentResults?: {
         totalSubmissions: number;
-        // ... inne pola wyników
     };
 }

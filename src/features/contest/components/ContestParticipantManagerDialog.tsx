@@ -6,7 +6,7 @@ import {
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import GavelIcon from '@mui/icons-material/Gavel';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'; // Competitor icon
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import type { ContestParticipantDto, ContestRole } from '../model/types';
 
 interface Props {
@@ -18,7 +18,6 @@ interface Props {
     isProcessing: boolean;
 }
 
-// Konfiguracja ról do wyświetlenia
 const ROLES_CONFIG: { role: ContestRole, label: string, icon: React.ReactElement, color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" }[] = [
     { role: 'MODERATOR', label: 'Moderator', icon: <VerifiedUserIcon />, color: 'secondary' },
     { role: 'JURY', label: 'Jury (Sędzia)', icon: <GavelIcon />, color: 'warning' },
@@ -41,7 +40,6 @@ export const ContestParticipantManagerDialog: React.FC<Props> = ({
             
             <DialogContent sx={{ mt: 2 }}>
                 
-                {/* 1. SEKCJA RÓL */}
                 <Typography variant="overline" display="block" gutterBottom color="text.secondary">
                     ROLE I UPRAWNIENIA
                 </Typography>
@@ -49,8 +47,6 @@ export const ContestParticipantManagerDialog: React.FC<Props> = ({
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
                     {ROLES_CONFIG.map((config) => {
                         const hasRole = participant.roles.includes(config.role);
-                        // Rola COMPETITOR jest zarządzana automatycznie przez zgłoszenie, 
-                        // więc zazwyczaj nie powinniśmy jej klikać ręcznie, ale dla elastyczności zostawiam disabled tylko wizualnie.
                         const isCompetitor = config.role === 'COMPETITOR';
 
                         return (
@@ -59,7 +55,6 @@ export const ContestParticipantManagerDialog: React.FC<Props> = ({
                                 icon={config.icon}
                                 label={config.label}
                                 color={hasRole ? config.color : 'default'}
-                                // Jeśli nie ma roli, dajemy outlined (szary), jeśli ma - filled (kolorowy)
                                 variant={hasRole ? 'filled' : 'outlined'}
                                 onClick={() => !isCompetitor && onToggleRole(config.role, hasRole)}
                                 sx={{ 
@@ -74,7 +69,6 @@ export const ContestParticipantManagerDialog: React.FC<Props> = ({
 
                 <Divider sx={{ my: 2 }} />
 
-                {/* 2. SEKCJA ZGŁOSZEŃ */}
                 <Typography variant="overline" display="block" gutterBottom color="text.secondary">
                     ZGŁOSZENIE KONKURSOWE
                 </Typography>

@@ -8,7 +8,7 @@ import { contestService } from '../api/contestService';
 
 interface Props {
     contestId: string;
-    onSuccess: () => void; // Callback po udanym wysłaniu (np. odświeżenie widoku)
+    onSuccess: () => void;
 }
 
 export const ContestSubmissionForm: React.FC<Props> = ({ contestId, onSuccess }) => {
@@ -62,7 +62,7 @@ export const ContestSubmissionForm: React.FC<Props> = ({ contestId, onSuccess })
                         type="file"
                         hidden
                         onChange={handleFileChange}
-                        accept="image/*,video/*" // Można dostosować do SubmissionMediaPolicy z contestu
+                        accept="image/*,video/*"
                     />
                 </Button>
             </Box>

@@ -9,7 +9,6 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { debounce } from '@mui/material/utils'; 
 
 import { Button } from '@/shared/ui/Button';
-// FIX: Używamy quizService
 import { quizService } from '../api/quizService'; 
 import { userService } from '@/features/user/api/userService';
 import type { UserSummary } from '@/features/user/model/types';
@@ -20,21 +19,17 @@ interface InviteUsersPanelProps {
 }
 
 export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) => {
-    // --- STAN AUTOCOMPLETE ---
     const [open, setOpen] = useState(false);
     const [options, setOptions] = useState<UserSummary[]>([]);
     const [loadingSearch, setLoadingSearch] = useState(false);
     
-    // Wybrani użytkownicy
     const [selectedUsers, setSelectedUsers] = useState<UserSummary[]>([]);
 
-    // --- STAN WYSYŁANIA ---
     const [generatedLinks, setGeneratedLinks] = useState<Record<string, string> | null>(null);
     const [isSending, setIsSending] = useState(false);
     
     const { showSuccess, showError } = useSnackbar();
 
-    // --- 1. LOGIKA WYSZUKIWANIA (DEBOUNCE) ---
     const fetchUsers = useMemo(
         () =>
             debounce(async (input: string, callback: (results: UserSummary[]) => void) => {
@@ -74,7 +69,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
         });
     };
 
-    // --- 2. LOGIKA WYSYŁANIA ---
     const handleSendInvites = async () => {
         if (selectedUsers.length === 0) return;
 
@@ -82,7 +76,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
 
         setIsSending(true);
         try {
-            // FIX: Używamy quizService zamiast surveyService
             const tokensMap = await quizService.generateInvites(roomId, ids);
             
             setGeneratedLinks(tokensMap);
@@ -101,7 +94,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
         showSuccess("Link skopiowany!");
     };
 
-    // FIX: Link prowadzi do /quiz/join/...
     const joinBaseUrl = `${window.location.origin}/quiz/join/${roomId}`;
 
     return (

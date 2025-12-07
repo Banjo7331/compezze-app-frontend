@@ -15,7 +15,7 @@ interface StartQuizRoomDialogProps {
 
 export const StartQuizRoomDialog: React.FC<StartQuizRoomDialogProps> = ({ open, onClose, onConfirm, isLoading }) => {
     const [maxParticipants, setMaxParticipants] = useState<string>('100');
-    const [timePerQuestion, setTimePerQuestion] = useState<string>('30'); // Domyślnie 30s
+    const [timePerQuestion, setTimePerQuestion] = useState<string>('30');
 
     const [participantsError, setParticipantsError] = useState<string | null>(null);
     const [timeError, setTimeError] = useState<string | null>(null);

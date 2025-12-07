@@ -8,15 +8,12 @@ import type { ContestDetailsDto } from '../model/types';
 
 export const ContestHeader: React.FC<{ contest: ContestDetailsDto }> = ({ contest }) => {
     
-    // Skoro to widok statyczny, nie mamy "currentStageId".
-    // Pokazujemy wszystkie kroki jako "do zrobienia" (-1), chyba że konkurs jest zakończony.
     const activeStep = contest.status === 'FINISHED' ? contest.stages.length : -1;
 
     return (
         <Paper elevation={3} sx={{ p: 4, mb: 4, borderRadius: 3, background: 'linear-gradient(to right, #ffffff, #f3e5f5)' }}>
             <Grid container spacing={2}>
                 
-                {/* INFORMACJE GŁÓWNE */}
                 <Grid size={{ xs: 12 }}>
                     <Stack direction="row" spacing={2} alignItems="center" mb={1}>
                         <Chip label={contest.category} color="secondary" variant="outlined" size="small" />
@@ -60,7 +57,6 @@ export const ContestHeader: React.FC<{ contest: ContestDetailsDto }> = ({ contes
                     </Stack>
                 </Grid>
 
-                {/* TIMELINE (PLAN WYDARZENIA) */}
                 <Grid size={{ xs: 12 }}>
                     <Box sx={{ mt: 2, py: 2, bgcolor: 'rgba(255,255,255,0.6)', borderRadius: 2, overflowX: 'auto' }}>
                         <Stepper activeStep={activeStep} alternativeLabel>

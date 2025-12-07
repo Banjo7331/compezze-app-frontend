@@ -15,7 +15,6 @@ export const useSurveyActiveRooms = (refreshTrigger = 0) => {
         const fetchRooms = async () => {
             setIsLoading(true);
             try {
-                // Rzutujemy wynik, jeśli definicja Page w shared jest generyczna
                 const response = await surveyService.getActiveRooms({ 
                     page, 
                     size: DEFAULT_PAGE_SIZE,

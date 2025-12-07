@@ -10,11 +10,10 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import QuizIcon from '@mui/icons-material/Quiz';
 import { useNavigate } from 'react-router-dom';
 
-// FIX: Import z contextu, nie z hooks!
 import { 
     useNotificationCenter, 
-    type NotificationType, // Import typu
-    type AppNotification   // Import typu
+    type NotificationType,
+    type AppNotification
 } from '@/app/providers/NotificationProvider';
 
 export const NotificationCenter: React.FC = () => {

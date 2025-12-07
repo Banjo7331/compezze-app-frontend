@@ -28,10 +28,8 @@ import { useSurveyRoomSocket } from '../hooks/useSurveyRoomSocket';
 import type { QuestionResultDto } from '../model/socket.types'; 
 import type { QuestionType as RestQuestionType } from '../model/types'; 
 
-// --- STAŁE ---
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-// --- KOMPONENT: WIZUALIZATOR TEKSTU (KARUZELA) ---
 const OpenTextVisualizer: React.FC<{ answers: string[] }> = ({ answers }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -89,7 +87,6 @@ const OpenTextVisualizer: React.FC<{ answers: string[] }> = ({ answers }) => {
     );
 };
 
-// --- KOMPONENT: DECYDENT WIZUALIZACJI ---
 interface ChartData {
     name: string;
     count: number;
@@ -102,14 +99,10 @@ interface QuestionVizProps {
 const QuestionVisualization: React.FC<QuestionVizProps> = ({ result }) => {
     const questionType = result.type as RestQuestionType; 
 
-    // 1. DLA PYTAŃ OTWARTYCH: Używamy Karuzeli
     if (questionType === 'OPEN_TEXT') {
-        // Bezpiecznie pobieramy listę (nawet jak null to dajemy [])
         return <OpenTextVisualizer answers={result.openAnswers || []} />;
     }
 
-    // 2. DLA WYKRESÓW (Single/Multiple Choice)
-    // Bezpiecznie pobieramy mapę (nawet jak null to dajemy {})
     const counts = result.answerCounts || {};
 
     const chartData: ChartData[] = Object.entries(counts).map(([option, count]) => ({
@@ -117,7 +110,6 @@ const QuestionVisualization: React.FC<QuestionVizProps> = ({ result }) => {
         count: count,
     }));
 
-    // Sortujemy słupki malejąco
     chartData.sort((a, b) => b.count - a.count);
 
     if (chartData.length === 0) {
@@ -144,8 +136,6 @@ const QuestionVisualization: React.FC<QuestionVizProps> = ({ result }) => {
     );
 };
 
-
-// --- GŁÓWNY KOMPONENT DASHBOARDU ---
 interface LiveResultSurveyDashboardProps {
     roomId: string;
     isHost: boolean; 
@@ -159,7 +149,6 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
 }) => {
     const { liveResults, participantCount, isRoomOpen } = useSurveyRoomSocket(roomId);
     
-    // 1. Oczekiwanie na dane
     if (!liveResults) {
         return (
             <Box sx={{ textAlign: 'center', py: 5 }}>
@@ -168,9 +157,7 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
             </Box>
         );
     }
-    
-    // 2. Walidacja dla UCZESTNIKA (Blokada podglądu przed wysłaniem)
-    // (Chyba że pokój jest zamknięty - wtedy zazwyczaj wyniki są publiczne, ale to zależy od logiki)
+
     const isAccessDenied = !isHost && !isParticipantSubmitted && isRoomOpen && liveResults.totalSubmissions === 0;
 
     if (isAccessDenied) {
@@ -181,7 +168,6 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
         );
     }
     
-    // 3. Render Dashboardu
     const displayResults = liveResults.results || [];
 
     return (
@@ -222,7 +208,6 @@ export const LiveResultSurveyDashboard: React.FC<LiveResultSurveyDashboardProps>
                                 </Typography>
                                 <Divider sx={{ mb: 2 }} />
                                 
-                                {/* Tutaj wchodzi albo Wykres, albo nasza nowa Karuzela */}
                                 <QuestionVisualization result={result} />
                                 
                             </CardContent>

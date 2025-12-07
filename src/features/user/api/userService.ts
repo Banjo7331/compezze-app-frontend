@@ -1,5 +1,4 @@
 import { apiClient } from '@/shared/api/apiClient';
-// Importujemy Twój typ Page z shared
 import type { UserSummary } from '../model/types';
 
 export interface Page<T> {

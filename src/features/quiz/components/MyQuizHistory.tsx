@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
     Box, Typography, Paper, Stack, Chip, IconButton, Pagination, CircularProgress, Tooltip 
 } from '@mui/material';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'; // Puchar zamiast oka
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import PersonIcon from '@mui/icons-material/Person';
 
 import { quizService } from '../api/quizService';
 import type { MyQuizRoomDto } from '../model/types';
-import { QuizHistoryDialog } from './QuizHistoryDialog'; // <--- Importujemy Modal
+import { QuizHistoryDialog } from './QuizHistoryDialog';
 
 export const MyQuizHistory: React.FC = () => {
     const [rooms, setRooms] = useState<MyQuizRoomDto[]>([]);
@@ -16,7 +16,6 @@ export const MyQuizHistory: React.FC = () => {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    // Stan dla Modala
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -79,7 +78,6 @@ export const MyQuizHistory: React.FC = () => {
                         </Box>
                         
                         <Tooltip title="Zobacz Ranking">
-                            {/* Ikona Pucharu otwiera Modal z wynikami */}
                             <IconButton color="warning" onClick={() => handleOpenResults(room.roomId)}>
                                 <EmojiEventsIcon />
                             </IconButton>
@@ -94,7 +92,6 @@ export const MyQuizHistory: React.FC = () => {
                 </Box>
             )}
 
-            {/* MODAL */}
             <QuizHistoryDialog 
                 open={isDialogOpen} 
                 roomId={selectedRoomId} 

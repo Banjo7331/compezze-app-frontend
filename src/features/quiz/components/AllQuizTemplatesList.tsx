@@ -12,10 +12,8 @@ import { useSnackbar } from '@/app/providers/SnackbarProvider';
 import { Button } from '@/shared/ui/Button';
 import type { GetQuizFormSummaryResponse, CreateQuizRoomRequest } from '../model/types';
 
-// FIX: Używamy dialogu quizowego (bez pytania o czas)
 import { StartQuizRoomDialog } from './StartQuizRoomDialog'; 
 
-// --- KOMPONENT KAFLA ---
 interface QuizItemProps {
     form: GetQuizFormSummaryResponse;
     onStartClick: (id: number) => void;
@@ -58,7 +56,6 @@ const QuizItem: React.FC<QuizItemProps> = ({ form, onStartClick }) => {
     );
 };
 
-// --- GŁÓWNY KOMPONENT LISTY (FEED) ---
 export const AllQuizTemplatesList: React.FC = () => {
     const navigate = useNavigate();
     const { showSuccess, showError } = useSnackbar();
@@ -68,12 +65,10 @@ export const AllQuizTemplatesList: React.FC = () => {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    // --- DIALOG STARTU ---
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
-    // Pobieranie danych (FEED)
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
@@ -95,7 +90,6 @@ export const AllQuizTemplatesList: React.FC = () => {
         setStartDialogOpen(true);
     };
 
-    // FIX: Funkcja przyjmuje tylko maxParticipants (bez duration)
     const handleConfirmStart = async (config: { maxParticipants: number }) => {
         if (!selectedFormId) return;
         setIsStarting(true);
@@ -140,7 +134,6 @@ export const AllQuizTemplatesList: React.FC = () => {
 
             {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                    {/* Używamy color='standard' lub 'primary', bo 'warning' nie jest wspierany */}
                     <Pagination 
                         count={totalPages} 
                         page={page + 1} 
@@ -150,7 +143,6 @@ export const AllQuizTemplatesList: React.FC = () => {
                 </Box>
             )}
 
-            {/* FIX: Używamy StartQuizRoomDialog */}
             <StartQuizRoomDialog 
                 open={startDialogOpen}
                 isLoading={isStarting}

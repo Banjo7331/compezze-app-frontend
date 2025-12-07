@@ -62,7 +62,6 @@ export const QuizHistoryDialog: React.FC<QuizHistoryDialogProps> = ({ roomId, op
                     <Alert severity="error">{error}</Alert>
                 ) : data ? (
                     <Box>
-                        {/* Nagłówek Informacyjny */}
                         <Box sx={{ textAlign: 'center', mb: 3 }}>
                             <Typography variant="h5" gutterBottom>{data.quizTitle}</Typography>
                             
@@ -74,9 +73,7 @@ export const QuizHistoryDialog: React.FC<QuizHistoryDialogProps> = ({ roomId, op
 
                         <Divider>🏆 TOP 5 🏆</Divider>
 
-                        {/* Tabela Wyników */}
-                        <QuizLeaderboardTable 
-                            // Wyświetlamy wszystkich lub np. top 10
+                        <QuizLeaderboardTable
                             leaderboard={data.currentResults?.leaderboard || []} 
                         />
                     </Box>

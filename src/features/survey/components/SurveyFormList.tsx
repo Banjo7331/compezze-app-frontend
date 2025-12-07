@@ -11,10 +11,9 @@ import { surveyService } from '../api/surveyService';
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
 import { StartSurveyRoomDialog } from './StartSurveyRoomDialog';
 
-// --- KOMPONENT POJEDYNCZEGO ELEMENTU (KAFLA) ---
 interface SurveyItemProps {
     survey: SurveyFormResponse;
-    onStartClick: (id: number) => void; // <-- Teraz rodzic decyduje co robić
+    onStartClick: (id: number) => void;
 }
 
 const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onStartClick }) => {
@@ -53,27 +52,22 @@ const SurveyItem: React.FC<SurveyItemProps> = ({ survey, onStartClick }) => {
     );
 };
 
-
-// --- KOMPONENT LISTY GŁÓWNEJ ---
 export const SurveyFormList: React.FC = () => {
     const navigate = useNavigate(); 
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
     const { showSuccess, showError } = useSnackbar();
     
-    // --- STANY DIALOGU ---
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
     const { data, isLoading, error, page, totalPages, setPage } = useUserSurveyForms({ refreshTrigger }); 
     
-    // 1. Otwieranie dialogu
     const handleOpenStartDialog = (id: number) => {
         setSelectedFormId(id);
         setStartDialogOpen(true);
     };
 
-    // 2. Logika tworzenia pokoju
     const handleConfirmStart = async (config: { duration: number, maxParticipants: number }) => {
         if (!selectedFormId) return;
         
@@ -88,7 +82,6 @@ export const SurveyFormList: React.FC = () => {
             const result = await surveyService.createRoom(request);
             showSuccess("Pokój utworzony!");
             navigate(`/survey/room/${result.roomId}`);
-            // Dialog zamknie się przy odmontowaniu (nawigacji)
         } catch (e) {
             showError("Błąd podczas tworzenia pokoju.");
             setIsStarting(false);
@@ -98,8 +91,6 @@ export const SurveyFormList: React.FC = () => {
     const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value - 1); 
     };
-
-    // --- RENDER ---
 
     if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
     if (error) return <Alert severity="error">Error loading surveys: {error.message}.</Alert>;
@@ -120,7 +111,7 @@ export const SurveyFormList: React.FC = () => {
                     <SurveyItem 
                         key={survey.surveyFormId} 
                         survey={survey} 
-                        onStartClick={handleOpenStartDialog} // <-- Przekazujemy handler
+                        onStartClick={handleOpenStartDialog}
                     />
                 ))}
             </Stack>
@@ -136,7 +127,6 @@ export const SurveyFormList: React.FC = () => {
                 </Box>
             )}
 
-            {/* DIALOG KONFIGURACJI POKOJU */}
             <StartSurveyRoomDialog 
                 open={startDialogOpen}
                 isLoading={isStarting}

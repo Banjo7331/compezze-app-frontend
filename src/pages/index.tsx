@@ -3,11 +3,9 @@ import { Route, Routes } from 'react-router-dom';
 import { Layout } from '@/shared/ui/Layout'; 
 import { LinearProgress } from '@mui/material';
 
-// Dynamiczne importy (lazy loading)
 const HomePage = lazy(() => import('./HomePage'));
 const LoginPage = lazy(() => import('./auth/LoginPage'));
 const RegisterPage = lazy(() => import('./auth/RegisterPage'));
-// --- Trasy Survey ---
 const SurveyPage = lazy(() => import('./survey/SurveyPage'));
 const SurveyCreatePage = lazy(() => import('./survey/SurveyCreatePage'));
 const SurveyRoomPage = lazy(() => import('./survey/SurveyRoomPage'));

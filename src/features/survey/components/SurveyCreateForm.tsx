@@ -2,23 +2,19 @@ import React, { useState } from 'react';
 import { 
     Typography, TextField, Box, Stack, Card, CardContent, 
     IconButton, MenuItem, Select, FormControl, InputLabel, 
-    FormControlLabel, Switch, Grid, Paper, CircularProgress // Dodano CircularProgress
+    FormControlLabel, Switch, Grid, Paper, CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-// Shared UI Imports
 import { Button } from '@/shared/ui/Button'; 
 
-// Feature Imports
-// QuestionTypeValues jest kluczowe dla poprawności typowania w JSX
 import type { QuestionType, CreateSurveyFormRequest, SurveyFormResponse } from '../model/types';
-import { QuestionTypeValues } from '../model/types'; // Dodano SurveyFormResponse, jeśli chcemy zwrócić ID
+import { QuestionTypeValues } from '../model/types';
 import { surveyService } from '../api/surveyService'; 
 
-// --- Local Types (Internal to the form) ---
 interface QuestionDraft {
     id: number;
     title: string;
@@ -26,14 +22,12 @@ interface QuestionDraft {
     possibleChoices: string[]; 
 }
 
-// Interfejs dla propów komponentu: TYLKO sygnalizacja sukcesu
 interface SurveyCreateFormProps {
     onCancel: () => void;
     onSuccess: () => void;
 }
 
 export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, onSuccess }) => {
-    // --- State Management ---
     const [title, setTitle] = useState('');
     const [isPrivate, setIsPrivate] = useState(false);
     const [questions, setQuestions] = useState<QuestionDraft[]>([
@@ -41,7 +35,6 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
     ]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- Validation Logic ---
     const TITLE_MIN = 8;
     const TITLE_MAX = 20;
     const QUESTIONS_MAX = 20;
@@ -59,8 +52,6 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
     });
 
     const isFormValid = isTitleValid && hasEnoughQuestions && areQuestionsValid && !isSubmitting;
-
-    // --- Handlers ---
 
     const addQuestion = () => {
         if (questions.length >= QUESTIONS_MAX) return; 
@@ -120,8 +111,6 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
         }));
     };
     
-    // --- SUBMIT HANDLER ---
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -143,10 +132,8 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
         };
 
         try {
-            // KROK: TWORZENIE FORMULARZA (POST /survey/form)
             await surveyService.createSurveyForm(payload); 
             
-            // Sygnalizujemy stronie nadrzędnej sukces bez przekazywania danych
             onSuccess(); 
 
         } catch (error) {
@@ -157,15 +144,12 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
         }
     };
 
-    // --- Render ---
-
     return (
         <Card component={Paper} elevation={6} sx={{ p: 4 }}>
             <CardContent>
                 <form onSubmit={handleSubmit}>
                     <Stack spacing={4}>
                         
-                        {/* Main Settings */}
                         <Box>
                             <Typography variant="h6" gutterBottom>Basic Info</Typography>
                             <Stack spacing={2}>
@@ -185,7 +169,6 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
                             </Stack>
                         </Box>
 
-                        {/* Questions */}
                         <Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography variant="h5">Questions ({questions.length}/{QUESTIONS_MAX})</Typography>
@@ -270,7 +253,6 @@ export const SurveyCreateForm: React.FC<SurveyCreateFormProps> = ({ onCancel, on
                             {!hasEnoughQuestions && <Typography color="error">Add at least one question.</Typography>}
                         </Box>
 
-                        {/* FINAL ACTIONS */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
                             <Button variant="outlined" onClick={onCancel} startIcon={<ArrowBackIcon />}>
                                 Cancel

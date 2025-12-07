@@ -12,8 +12,6 @@ import type { QuestionType as RestQuestionType } from '../model/types';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-// --- SUB-KOMPONENTY (Możesz je trzymać w tym samym pliku) ---
-
 const OpenTextVisualizer: React.FC<{ answers: string[] }> = ({ answers }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     if (!answers || answers.length === 0) return <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>Brak odpowiedzi tekstowych.</Typography>;
@@ -55,8 +53,6 @@ const QuestionVisualization: React.FC<{ result: QuestionResultDto }> = ({ result
     );
 };
 
-// --- GŁÓWNY KOMPONENT ---
-
 interface ResultsVisualizerProps {
     results: FinalRoomResultDto;
 }
@@ -71,8 +67,6 @@ export const RoomResultsVisualizer: React.FC<ResultsVisualizerProps> = ({ result
     return (
         <Grid container spacing={3}>
             {displayResults.map((result, index) => (
-                // XS=12 oznacza pełną szerokość (jeden pod drugim na mobilkach)
-                // Możesz zmienić MD na 12, jeśli chcesz jeden pod drugim też na desktopie
                 <Grid size={{ xs: 12 }} key={result.questionId}>
                     <Card variant="outlined" sx={{ borderRadius: 3 }}>
                         <CardContent>

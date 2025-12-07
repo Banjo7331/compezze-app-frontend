@@ -13,7 +13,6 @@ import { useSnackbar } from '@/app/providers/SnackbarProvider';
 import { Button } from '@/shared/ui/Button';
 import type { MyQuizFormDto, CreateQuizRoomRequest } from '../model/types';
 
-// Import Dialogu (ten bez pola czasu, bo Quiz ma sztywny TTL)
 import { StartQuizRoomDialog } from './StartQuizRoomDialog';
 
 export const MyQuizTemplatesList: React.FC = () => {
@@ -26,12 +25,10 @@ export const MyQuizTemplatesList: React.FC = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    // --- Stany dla Dialogu ---
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
-    // Ładowanie danych
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
@@ -48,7 +45,6 @@ export const MyQuizTemplatesList: React.FC = () => {
         loadData();
     }, [page, refreshTrigger]);
 
-    // Usuwanie
     const handleDelete = async (id: number) => {
         if (!window.confirm("Czy na pewno usunąć ten Quiz?")) return;
         try {
@@ -60,13 +56,11 @@ export const MyQuizTemplatesList: React.FC = () => {
         }
     };
 
-    // Otwieranie dialogu (zamiast QuickLaunch)
     const handleOpenStartDialog = (id: number) => {
         setSelectedFormId(id);
         setStartDialogOpen(true);
     };
 
-    // Potwierdzenie startu
     const handleConfirmStart = async (config: { maxParticipants: number }) => {
         if (!selectedFormId) return;
         setIsStarting(true);
@@ -85,7 +79,6 @@ export const MyQuizTemplatesList: React.FC = () => {
         }
     };
 
-    // Render
     if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />;
 
     if (forms.length === 0) {
@@ -132,7 +125,6 @@ export const MyQuizTemplatesList: React.FC = () => {
                 </Box>
             )}
 
-            {/* DIALOG STARTU */}
             <StartQuizRoomDialog 
                 open={startDialogOpen}
                 isLoading={isStarting}

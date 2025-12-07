@@ -35,7 +35,6 @@ export const MySurveyRoomHistory: React.FC = () => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                // Pobieramy "Moje Pokoje" (historia)
                 const data = await surveyService.getMyRoomsHistory({ page, size: 5, sort: 'createdAt,desc' });
                 setRooms(data.content);
                 setTotalPages(data.totalPages);
@@ -66,7 +65,7 @@ export const MySurveyRoomHistory: React.FC = () => {
                             display: 'flex', 
                             justifyContent: 'space-between', 
                             alignItems: 'center',
-                            borderLeft: `4px solid ${room.isOpen ? '#4caf50' : '#9e9e9e'}` // Zielony = Otwarty, Szary = Zamknięty
+                            borderLeft: `4px solid ${room.isOpen ? '#4caf50' : '#9e9e9e'}`
                         }}
                     >
                         <Box>
@@ -81,7 +80,6 @@ export const MySurveyRoomHistory: React.FC = () => {
                                     size="small" 
                                 />
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    {/* Statystyki */}
                                     <span style={{ display: 'flex', alignItems: 'center' }}>
                                         <PersonIcon fontSize="inherit" sx={{ mr: 0.5 }}/> {room.totalParticipants}
                                     </span>

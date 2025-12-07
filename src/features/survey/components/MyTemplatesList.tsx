@@ -22,19 +22,16 @@ export const MyTemplatesList: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    // Trigger do odświeżania listy po usunięciu
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
-    // --- Ładowanie danych ---
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
             try {
-                // Pobieramy "Moje Formularze"
                 const data = await surveyService.getMyForms({ page, size: 5, sort: 'createdAt,desc' });
                 setForms(data.content);
                 setTotalPages(data.totalPages);
@@ -52,20 +49,18 @@ export const MyTemplatesList: React.FC = () => {
         setStartDialogOpen(true);
     };
 
-    // --- Usuwanie ---
     const handleDelete = async (id: number) => {
         if (!window.confirm("Czy na pewno chcesz usunąć ten szablon? Nie będziesz mógł tworzyć z niego nowych sesji.")) return;
 
         try {
             await surveyService.deleteForm(id);
             showSuccess("Szablon został usunięty.");
-            setRefreshTrigger(prev => prev + 1); // Odśwież widok
+            setRefreshTrigger(prev => prev + 1);
         } catch (e: any) {
             showError("Nie udało się usunąć. Sprawdź czy nie ma aktywnych sesji powiązanych z tym szablonem.");
         }
     };
 
-    // --- Szybki Start (Launch) ---
     const handleQuickLaunch = async (config: { duration: number, maxParticipants: number }) => {
         if (!selectedFormId) return;
 
@@ -81,14 +76,11 @@ export const MyTemplatesList: React.FC = () => {
             showSuccess("Pokój utworzony pomyślnie!");
             navigate(`/survey/room/${result.roomId}`);
             
-            // Dialog zamknie się sam, bo nastąpi przekierowanie (unmount)
         } catch (e) {
             showError("Błąd podczas tworzenia pokoju.");
-            setIsStarting(false); // Jeśli błąd, zostajemy w dialogu
+            setIsStarting(false);
         }
     };
-
-    // --- Renderowanie ---
 
     if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', my: 4 }} />;
 
@@ -125,7 +117,6 @@ export const MyTemplatesList: React.FC = () => {
                         
                         <Box>
                             <Tooltip title="Uruchom nową sesję">
-                                {/* ZMIANA: Wywołujemy openStartDialog */}
                                 <IconButton color="success" onClick={() => openStartDialog(form.id)}>
                                     <PlayArrowIcon />
                                 </IconButton>

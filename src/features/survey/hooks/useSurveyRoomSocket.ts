@@ -27,10 +27,8 @@ export const useSurveyRoomSocket = (roomId: string) => {
         isLoading: true, 
     });
     
-    // Ref do śledzenia montowania (dla Strict Mode)
     const isMounted = useRef(false);
 
-    // 1. POBIERANIE STANU POCZĄTKOWEGO (REST)
     useEffect(() => {
         isMounted.current = true;
         if (!roomId) return;
@@ -60,7 +58,6 @@ export const useSurveyRoomSocket = (roomId: string) => {
     }, [roomId]);
 
 
-    // 2. OBSŁUGA SOCKETÓW
     const handleMessage = useCallback((message: WSMessage) => {
         const payload = message as SurveySocketMessage;
         
@@ -77,7 +74,6 @@ export const useSurveyRoomSocket = (roomId: string) => {
                     setState(prevState => ({
                         ...prevState,
                         liveResults: payload.currentResults,
-                        // Nullish coalescing dla bezpieczeństwa
                         participantCount: payload.currentResults.totalParticipants ?? prevState.participantCount,
                     }));
                 }
@@ -95,16 +91,12 @@ export const useSurveyRoomSocket = (roomId: string) => {
 
     useEffect(() => {
         if (!roomId) return;
-        
-        // NIE robimy tutaj surveySocket.activate(), bo Layout.tsx to robi.
-        // Ale dla bezpieczeństwa (jeśli komponent użyty poza layoutem) można dodać check:
         if (!surveySocket.isActive()) surveySocket.activate();
 
         let subscriptionId: string | null = null;
         let timeoutId: any;
         
         const connectLoop = () => {
-            // Jeśli komponent odmontowany, przerywamy pętlę retry
             if (!isMounted.current) return;
 
             if (surveySocket.isConnected()) {
@@ -117,11 +109,10 @@ export const useSurveyRoomSocket = (roomId: string) => {
         connectLoop();
 
         return () => {
-            clearTimeout(timeoutId); // Ważne: czyścimy timeout
+            clearTimeout(timeoutId);
             if (subscriptionId) {
                 surveySocket.unsubscribe(subscriptionId);
             }
-            // NIE robimy deactivate()
         };
     }, [roomId, handleMessage]);
 

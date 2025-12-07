@@ -18,7 +18,7 @@ export type SubmissionMediaPolicy = typeof SubmissionMediaPolicy[keyof typeof Su
 export const StageType = {
     QUIZ: 'QUIZ',
     SURVEY: 'SURVEY',
-    JURY_VOTE: 'JURY_VOTE', // Pamiętaj: W Javie w @JsonSubTypes name="JURY_VOTE"
+    JURY_VOTE: 'JURY_VOTE',
     PUBLIC_VOTE: 'PUBLIC_VOTE',
     GENERIC: 'GENERIC',
     CUSTOM: 'CUSTOM'
@@ -31,17 +31,13 @@ export const JuryRevealMode = {
 } as const;
 export type JuryRevealMode = typeof JuryRevealMode[keyof typeof JuryRevealMode];
 
-
-// --- STAGE REQUESTS (Polimorfizm) ---
-
 interface BaseStageRequest {
     name: string;
     durationMinutes: number;
-    order?: number; // Backend może ignorować, jeśli bierze z listy
+    order?: number;
     type: StageType;
 }
 
-// 1. Quiz
 export interface QuizStageRequest extends BaseStageRequest {
     type: 'QUIZ';
     quizFormId: number;
@@ -50,16 +46,12 @@ export interface QuizStageRequest extends BaseStageRequest {
     timePerQuestion: number;
 }
 
-// 2. Survey
 export interface SurveyStageRequest extends BaseStageRequest {
     type: 'SURVEY';
     surveyFormId: number;
     maxParticipants: number;
-    // durationMinutes jest już w base, ale w Javie masz to pole też w podklasie. 
-    // TS: base.durationMinutes wystarczy.
 }
 
-// 3. Jury
 export interface JuryStageRequest extends BaseStageRequest {
     type: 'JURY_VOTE';
     weight: number;
@@ -68,28 +60,22 @@ export interface JuryStageRequest extends BaseStageRequest {
     showJudgeNames: boolean;
 }
 
-// 4. Public Vote
 export interface PublicStageRequest extends BaseStageRequest {
     type: 'PUBLIC_VOTE';
     weight: number;
     maxScore: number;
 }
 
-// 5. Generic
 export interface GenericStageRequest extends BaseStageRequest {
     type: 'GENERIC' | 'CUSTOM';
 }
 
-// UNIA
 export type StageRequest = 
     | QuizStageRequest 
     | SurveyStageRequest 
     | JuryStageRequest 
     | PublicStageRequest 
     | GenericStageRequest;
-
-
-// --- CREATE CONTEST REQUEST ---
 
 export interface CreateContestRequest {
     name: string;
@@ -99,13 +85,13 @@ export interface CreateContestRequest {
     contestCategory: ContestCategory;
     participantLimit?: number;
     
-    startDate: string; // ISO
-    endDate: string;   // ISO
+    startDate: string;
+    endDate: string;
     
     isPrivate: boolean;
     hasPreliminaryStage: boolean;
     
-    templateId: string; // Wymagane przez Twój backend
+    templateId: string;
     submissionMediaPolicy?: SubmissionMediaPolicy;
 
     stages: StageRequest[];
@@ -168,12 +154,11 @@ export interface ContestParticipantDto {
     submissionStatus?: string; 
 }
 
-// --- WERYFIKACJA ZGŁOSZEŃ ---
 export interface SubmissionDto {
     id: string;
     participantName: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    contentUrl?: string; // URL do obrazka/pliku
+    contentUrl?: string;
     comment?: string;
     createdAt: string;
 }

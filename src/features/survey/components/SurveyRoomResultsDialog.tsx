@@ -43,7 +43,7 @@ export const SurveyResultsDialog: React.FC<SurveyResultsDialogProps> = ({ roomId
             onClose={onClose} 
             maxWidth="md" 
             fullWidth
-            scroll="paper" // To pozwala przewijać treść wewnątrz modala
+            scroll="paper"
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>

@@ -27,7 +27,6 @@ export const QuizLobby: React.FC<QuizLobbyProps> = ({ isHost, roomId, participan
             </Box>
 
             <Grid container spacing={4}>
-                {/* LEWA STRONA: LISTA GRACZY */}
                 <Grid size={{ xs: 12, md: isHost ? 8 : 12 }}>
                     <Paper elevation={3} sx={{ p: 3, bgcolor: '#f8f9fa', borderRadius: 3 }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
@@ -39,7 +38,7 @@ export const QuizLobby: React.FC<QuizLobbyProps> = ({ isHost, roomId, participan
 
                         <Grid container spacing={1}>
                             {participants.map((p, idx) => (
-                                <Grid size="auto" key={idx}> {/* size="auto" dopasowuje do treści */}
+                                <Grid size="auto" key={idx}>
                                     <Chip 
                                         icon={<PersonIcon />} 
                                         label={p.nickname} 
@@ -73,7 +72,6 @@ export const QuizLobby: React.FC<QuizLobbyProps> = ({ isHost, roomId, participan
                     )}
                 </Grid>
 
-                {/* PRAWA STRONA: ZAPROSZENIA (TYLKO DLA HOSTA) */}
                 {isHost && (
                     <Grid size={{ xs: 12, md: 4 }}>
                         <InviteUsersPanel roomId={roomId} />

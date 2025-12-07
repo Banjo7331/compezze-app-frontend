@@ -15,14 +15,11 @@ export const AllFormsDialog: React.FC<AllTemplatesDialogProps> = ({ open, onClos
             onClose={onClose} 
             maxWidth="md" 
             fullWidth
-            // KLUCZOWE: Ustawia scrollowanie wewnątrz papieru (kontentu), a nie całego body
             scroll="paper"
             PaperProps={{
                 sx: {
-                    // Opcjonalnie: Ustawienie sztywnej maksymalnej wysokości
-                    // (domyślnie MUI dba o to, by nie wyjść poza ekran, ale możesz wymusić np. 80vh)
                     maxHeight: '80vh', 
-                    minHeight: '50vh' // Żeby nie był za mały
+                    minHeight: '50vh'
                 }
             }}
         >
@@ -35,7 +32,6 @@ export const AllFormsDialog: React.FC<AllTemplatesDialogProps> = ({ open, onClos
                 </IconButton>
             </DialogTitle>
             
-            {/* dividers dodaje linie oddzielające nagłówek/stopkę, co wygląda ładnie przy scrollu */}
             <DialogContent dividers>
                 <SurveyFormList />
             </DialogContent>

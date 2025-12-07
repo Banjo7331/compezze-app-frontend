@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Paper, Button, Divider, Stack, Chip } from '@mui/material';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents'; // Puchar
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -10,7 +10,7 @@ import { QuizRoomStatus } from '../model/types';
 import type { LeaderboardEntryDto } from '../model/socket.types';
 
 interface QuizResultViewProps {
-    status: string; // QuizRoomStatus
+    status: string;
     isHost: boolean;
     leaderboard: LeaderboardEntryDto[];
     onNext: () => void;
@@ -27,12 +27,11 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
     const navigate = useNavigate();
     const isFinished = status === QuizRoomStatus.FINISHED;
 
-    // Funkcja pomocnicza do kolorowania podium
     const getRankStyle = (rank: number) => {
         switch (rank) {
-            case 1: return { bgcolor: '#fff9c4', border: '2px solid #fbc02d', icon: '🥇' }; // Złoto
-            case 2: return { bgcolor: '#f5f5f5', border: '2px solid #bdbdbd', icon: '🥈' }; // Srebro
-            case 3: return { bgcolor: '#ffebee', border: '2px solid #ffab91', icon: '🥉' }; // Brąz
+            case 1: return { bgcolor: '#fff9c4', border: '2px solid #fbc02d', icon: '🥇' };
+            case 2: return { bgcolor: '#f5f5f5', border: '2px solid #bdbdbd', icon: '🥈' };
+            case 3: return { bgcolor: '#ffebee', border: '2px solid #ffab91', icon: '🥉' };
             default: return { bgcolor: 'white', border: '1px solid #eee', icon: `#${rank}` };
         }
     };
@@ -40,7 +39,6 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
     return (
         <Paper elevation={4} sx={{ p: 5, textAlign: 'center', maxWidth: 800, mx: 'auto', mt: 5, borderRadius: 4 }}>
             
-            {/* NAGŁÓWEK */}
             <Box sx={{ mb: 4 }}>
                 {isFinished ? (
                     <>
@@ -68,7 +66,6 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                 <Chip label="RANKING (TOP 5)" />
             </Divider>
 
-            {/* LEADERBOARD */}
             <Stack spacing={2} sx={{ mb: 6 }}>
                 {leaderboard.length === 0 ? (
                     <Typography color="text.secondary" fontStyle="italic">Brak wyników...</Typography>
@@ -109,11 +106,9 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                 )}
             </Stack>
 
-            {/* AKCJE HOSTA / NAWIGACJA */}
             {isHost ? (
                 <Stack direction="row" spacing={2} justifyContent="center">
                     {!isFinished ? (
-                        // Przerwa -> Następne pytanie
                         <>
                             <Button 
                                 variant="outlined" 
@@ -135,7 +130,6 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                             </Button>
                         </>
                     ) : (
-                        // Koniec gry -> Wyjście
                         <Button 
                             variant="contained" 
                             size="large" 
@@ -147,7 +141,6 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({
                     )}
                 </Stack>
             ) : (
-                // WIDOK GRACZA (Tylko wyjście po końcu gry)
                 <Box>
                     {isFinished ? (
                         <Button 

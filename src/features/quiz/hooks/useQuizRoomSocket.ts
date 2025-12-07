@@ -13,7 +13,6 @@ import {
 } from '../model/socket.types';
 import { QuizRoomStatus, type WSMessage } from '../model/types';
 
-// Definicja typu opcji przychodzącej z Backendu (musi mieć id!)
 export interface SocketOptionDto {
     id: number;
     text: string;
@@ -25,7 +24,7 @@ interface QuizRoomState {
         questionId: number;
         index: number;
         title: string;
-        options: SocketOptionDto[]; // <--- Poprawiony typ
+        options: SocketOptionDto[];
         timeLimit: number;
         endTime: number;
     } | null;
@@ -52,7 +51,6 @@ export const useQuizRoomSocket = (roomId: string) => {
 
     const isMounted = useRef(false);
 
-    // 1. REST Snapshot (Przy wejściu/odświeżeniu)
     useEffect(() => {
         isMounted.current = true;
         if (!roomId) return;
@@ -63,7 +61,6 @@ export const useQuizRoomSocket = (roomId: string) => {
                 
                 if (isMounted.current) {
                     
-                    // Mapowanie Leadborardu (zabezpieczenie przed null/username vs nickname)
                     const mappedLeaderboard = details.currentResults?.leaderboard?.map((entry: any) => ({
                         userId: entry.userId,
                         nickname: entry.username || entry.nickname || "Unknown",
@@ -71,7 +68,6 @@ export const useQuizRoomSocket = (roomId: string) => {
                         rank: entry.rank
                     })) || [];
 
-                    // Mapowanie Pytania (jeśli gra trwa)
                     let initialQuestion = null;
                     if (details.currentQuestion) {
                          const q = details.currentQuestion;
@@ -81,7 +77,7 @@ export const useQuizRoomSocket = (roomId: string) => {
                             questionId: q.questionId,
                              index: q.questionIndex,
                              title: q.title,
-                             options: q.options as unknown as SocketOptionDto[], // Rzutowanie
+                             options: q.options as unknown as SocketOptionDto[],
                              timeLimit: q.timeLimitSeconds,
                              endTime: endTime
                          };
@@ -109,7 +105,6 @@ export const useQuizRoomSocket = (roomId: string) => {
     }, [roomId]);
 
 
-    // 2. WebSocket Handler (Aktualizacje na żywo)
     const handleMessage = useCallback((message: WSMessage) => {
         const payload = message as QuizSocketMessage;
         console.log("🎮 Quiz Event:", payload.event, payload);
@@ -118,7 +113,6 @@ export const useQuizRoomSocket = (roomId: string) => {
             case 'USER_JOINED':
                 setState(prev => {
                     const pMsg = payload as QuizUserJoinedMessage;
-                    // Idempotentność (unikamy duplikatów w liście)
                     const exists = prev.leaderboard.some(u => u.userId === pMsg.userId);
                     
                     if (exists) {
@@ -158,7 +152,6 @@ export const useQuizRoomSocket = (roomId: string) => {
                         questionId: qMsg.questionId,
                         index: qMsg.questionIndex,
                         title: qMsg.title,
-                        // Tutaj rzutujemy na SocketOptionDto[] (backend musi wysyłać ID!)
                         options: qMsg.options as unknown as SocketOptionDto[], 
                         timeLimit: qMsg.timeLimitSeconds,
                         endTime: endTime
@@ -194,15 +187,11 @@ export const useQuizRoomSocket = (roomId: string) => {
         }
     }, []);
 
-    // 3. Connection Loop (Bezpieczny)
     useEffect(() => {
         if (!roomId) return;
-        
-        // Layout zarządza activate(), ale check nie zaszkodzi
-        // if (!quizSocket.isActive()) quizSocket.activate();
 
         let subscriptionId: string | null = null;
-        let timeoutId: any; // 'any' dla timeoutu w przeglądarce
+        let timeoutId: any;
 
         const connectLoop = () => {
             if (!isMounted.current) return;

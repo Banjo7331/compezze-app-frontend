@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-// IMPORTUJEMY OBIEKT authApi
 import { authApi } from './api/authApi';
 import type { UserDto } from './model/types'; 
 
-// Czas wygaśnięcia Access Tokena (15 min = 900 000 ms)
 const ACCESS_TOKEN_EXPIRY_MS = 900000; 
 
 interface AuthContextState {
@@ -25,10 +23,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isInitializing: true,
     });
 
-    // --- WYLOGOWANIE ---
     const logout = useCallback(async () => {
         try {
-            await authApi.logout(); // Wywołanie z obiektu
+            await authApi.logout();
         } catch (e) {
             console.error("Logout error (ignoring):", e);
         }
@@ -42,10 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     }, []);
 
-    // --- POBIERANIE DANYCH UŻYTKOWNIKA ---
     const fetchUserData = async () => {
         try {
-            const user = await authApi.getMe(); // Wywołanie z obiektu
+            const user = await authApi.getMe();
             setState(prev => ({
                 ...prev,
                 isAuthenticated: true,
@@ -58,15 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
     
-    // --- CICHE ODŚWIEŻANIE (Silent Refresh) ---
     const trySilentRefresh = async (): Promise<string | null> => {
         try {
-            // Wywołanie z obiektu (bez argumentów, bo cookie)
             const response = await authApi.refresh(); 
             const newAccessToken = response.accessToken;
             localStorage.setItem('accessToken', newAccessToken);
             
-            // Jeśli odzyskaliśmy sesję, a stan mówi że nie jesteśmy zalogowani:
             if (!state.isAuthenticated) {
                  const user = await authApi.getMe();
                  setState({
@@ -78,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return newAccessToken;
         } catch (error) {
-            // Jeśli refresh się nie udał (np. ciasteczko wygasło)
             if (state.isAuthenticated) {
                 logout();
             } else {
@@ -88,13 +80,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    // --- FUNKCJA PO LOGOWANIU ---
     const authenticate = async (accessToken: string) => {
         localStorage.setItem('accessToken', accessToken);
         await fetchUserData();
     };
 
-    // --- INICJALIZACJA ---
     useEffect(() => {
         const initializeAuth = async () => {
             const token = localStorage.getItem('accessToken');
@@ -103,13 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 await trySilentRefresh();
             }
-            // Upewniamy się, że flaga ładowania zostanie zdjęta
             setState(prev => ({ ...prev, isInitializing: false }));
         };
         
         initializeAuth();
         
-        // Timer odświeżania
         const intervalId = setInterval(() => {
             if (state.isAuthenticated) {
                 trySilentRefresh();
@@ -117,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, ACCESS_TOKEN_EXPIRY_MS - 30000);
 
         return () => clearInterval(intervalId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); 
 
     return (

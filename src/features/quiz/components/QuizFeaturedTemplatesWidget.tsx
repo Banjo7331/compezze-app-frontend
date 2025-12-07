@@ -11,10 +11,8 @@ import { quizService } from '../api/quizService';
 import type { MyQuizFormDto, CreateQuizRoomRequest } from '../model/types';
 import { useSnackbar } from '@/app/providers/SnackbarProvider';
 
-// Importy Dialogów
 import { AllQuizFormsDialog } from './AllQuizFormsDialog';
-import { StartQuizRoomDialog } from './StartQuizRoomDialog'; // <--- NOWY IMPORT (Stwórz ten plik!)
-
+import { StartQuizRoomDialog } from './StartQuizRoomDialog';
 export const QuizFeaturedTemplatesWidget: React.FC = () => {
     const navigate = useNavigate();
     const { showSuccess, showError } = useSnackbar();
@@ -22,13 +20,11 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
     const [forms, setForms] = useState<MyQuizFormDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
-    // Stany dla Dialogów
-    const [isAllFormsDialogOpen, setIsAllFormsDialogOpen] = useState(false); // <--- TO DODAŁEM
+    const [isAllFormsDialogOpen, setIsAllFormsDialogOpen] = useState(false);
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [selectedFormId, setSelectedFormId] = useState<number | null>(null);
     const [isStarting, setIsStarting] = useState(false);
 
-    // Pobieramy 3 ostatnie quizy
     useEffect(() => {
         const fetchForms = async () => {
             try {
@@ -43,13 +39,11 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
         fetchForms();
     }, []);
 
-    // Otwieranie dialogu startu (zamiast natychmiastowego startu)
     const handleOpenStartDialog = (id: number) => {
         setSelectedFormId(id);
         setStartDialogOpen(true);
     };
 
-    // Potwierdzenie startu (z dialogu)
     const handleConfirmStart = async (config: { maxParticipants: number }) => {
         if (!selectedFormId) return;
 
@@ -116,7 +110,7 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
                                 variant="contained"
                                 color="warning"
                                 startIcon={<PlayArrowIcon />}
-                                onClick={() => handleOpenStartDialog(quiz.id)} // <--- ZMIANA
+                                onClick={() => handleOpenStartDialog(quiz.id)}
                                 sx={{ minWidth: 'auto', px: 2 }}
                             >
                                 GRAJ
@@ -137,7 +131,6 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
                         color="warning"
                         fullWidth 
                         startIcon={<GridViewIcon />}
-                        // ZMIANA: Otwieramy Dialog zamiast nawigacji
                         onClick={() => setIsAllFormsDialogOpen(true)} 
                     >
                         Wszystkie Quizy
@@ -145,15 +138,11 @@ export const QuizFeaturedTemplatesWidget: React.FC = () => {
                 </Box>
             </Paper>
 
-            {/* --- DIALOGI --- */}
-            
-            {/* Modal z pełną listą (Feed) */}
             <AllQuizFormsDialog 
                 open={isAllFormsDialogOpen} 
                 onClose={() => setIsAllFormsDialogOpen(false)} 
             />
             
-            {/* Modal konfiguracji nowej gry */}
             <StartQuizRoomDialog 
                 open={startDialogOpen}
                 isLoading={isStarting}

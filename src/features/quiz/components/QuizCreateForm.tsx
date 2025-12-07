@@ -9,7 +9,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import StarIcon from '@mui/icons-material/Star'; // Zostawiamy tylko gwiazdkę (punkty)
+import StarIcon from '@mui/icons-material/Star';
 
 import { Button } from '@/shared/ui/Button'; 
 import { quizService } from '../api/quizService'; 
@@ -17,7 +17,6 @@ import { useSnackbar } from '@/app/providers/SnackbarProvider';
 import { QuestionType } from '../model/types';
 import type { CreateQuizFormRequest } from '../model/types';
 
-// --- TYPY LOKALNE ---
 interface OptionDraft {
     text: string;
     isCorrect: boolean;
@@ -27,7 +26,6 @@ interface QuestionDraft {
     id: number;
     title: string;
     type: typeof QuestionType[keyof typeof QuestionType];
-    // USUNIĘTO: timeLimitSeconds
     points: number;
     options: OptionDraft[];
 }
@@ -59,13 +57,10 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
             id: Date.now(), 
             title: '', 
             type: QuestionType.SINGLE_CHOICE, 
-            // timeLimitSeconds usunięte
             points: 1000,
             options: JSON.parse(JSON.stringify(DEFAULT_OPTIONS_SINGLE))
         }
     ]);
-
-    // --- HANDLERY PYTAŃ ---
 
     const addQuestion = () => {
         if (questions.length >= 50) return;
@@ -109,8 +104,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
             return q;
         }));
     };
-
-    // --- HANDLERY OPCJI ---
 
     const handleOptionTextChange = (qId: number, oIndex: number, text: string) => {
         setQuestions(questions.map(q => {
@@ -157,7 +150,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
         }));
     };
 
-    // --- WALIDACJA ---
     const TITLE_MIN = 3;
     const TITLE_MAX = 50;
     const QUESTIONS_MAX = 20;
@@ -187,7 +179,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
             questions: questions.map(q => ({
                 title: q.title,
                 type: q.type,
-                // timeLimitSeconds: USUNIĘTE
                 points: q.points,
                 options: q.options
             }))
@@ -204,8 +195,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
             setIsSubmitting(false);
         }
     };
-
-    // --- RENDER ---
 
     return (
         <Card component={Paper} elevation={6} sx={{ p: 4 }}>
@@ -247,7 +236,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
                                     <Card key={q.id} variant="outlined" sx={{ position: 'relative', borderLeft: '4px solid #ed6c02' }}>
                                         <CardContent>
                                             
-                                            {/* Wiersz 1: Treść i Typ */}
                                             <Grid container spacing={2} sx={{ mb: 2 }}>
                                                 <Grid size={{ xs: 12, md: 8 }}>
                                                     <TextField
@@ -276,7 +264,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
                                                 </Grid>
                                             </Grid>
 
-                                            {/* Wiersz 2: Tylko Punkty (Czas usunięty) */}
                                             <Box sx={{ mb: 2 }}>
                                                 <TextField 
                                                     label="Punkty za odpowiedź"
@@ -292,7 +279,6 @@ export const QuizCreateForm: React.FC<QuizCreateFormProps> = ({ onCancel, onSucc
                                                 />
                                             </Box>
 
-                                            {/* Wiersz 3: Opcje */}
                                             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                                                 Odpowiedzi (Zaznacz poprawne):
                                             </Typography>

@@ -1,10 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
-import { authApi } from '../api/authApi'; // Importujemy obiekt
+import { authApi } from '../api/authApi';
 import type { RegisterRequest } from '../model/types';
 
 export const useRegister = () => {
     const { mutate, isPending, isSuccess, error } = useMutation<string, Error, RegisterRequest>({
-        // Używamy funkcji strzałkowej, aby wywołać metodę z obiektu
         mutationFn: (data) => authApi.register(data),
     });
 

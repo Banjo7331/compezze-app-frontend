@@ -1,43 +1,36 @@
 import type { QuestionType } from './types';
 
 export interface QuestionResultDto {
-    questionId: number; // Long w Javie, number w TS
+    questionId: number; 
     title: string;
     type: QuestionType;
-    answerCounts: Record<string, number>; // Map<String, Long> w Javie
+    answerCounts: Record<string, number>;
     openAnswers: string[];
 }
 
 export interface FinalRoomResultDto {
-    totalParticipants: number; // long w Javie
-    totalSubmissions: number;  // long w Javie
+    totalParticipants: number;
+    totalSubmissions: number;
     results: QuestionResultDto[];
 }
 
-
-// --- SOCKET MESSAGES (Payloads) ---
-
 export interface UserJoinedSocketMessage {
-    event: 'USER_JOINED'; // <--- To jest kluczowe dla TypeScripta
+    event: 'USER_JOINED';
     participantId: number; 
     userId: string;
     newParticipantCount: number;
 }
 
-// 2. LIVE UPDATE
 export interface LiveResultUpdateSocketMessage {
-    event: 'LIVE_RESULTS_UPDATE'; // <--- Kluczowe
-    currentResults: FinalRoomResultDto; // To już poprawiłeś, jest OK (zgodne z Javą)
+    event: 'LIVE_RESULTS_UPDATE';
+    currentResults: FinalRoomResultDto;
 }
 
-// 3. ROOM CLOSED
 export interface RoomClosedSocketMessage {
-    event: 'ROOM_CLOSED'; // <--- Kluczowe
+    event: 'ROOM_CLOSED';
     finalResults: FinalRoomResultDto;
 }
 
-
-// --- GŁÓWNY TYP WIADOMOŚCI WEBSOCKET (Dla ujednolicenia) ---
 export type SurveySocketMessage = 
     | UserJoinedSocketMessage 
     | LiveResultUpdateSocketMessage 

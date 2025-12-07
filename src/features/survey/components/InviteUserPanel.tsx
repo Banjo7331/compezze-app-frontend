@@ -6,7 +6,7 @@ import {
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SendIcon from '@mui/icons-material/Send';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { debounce } from '@mui/material/utils'; // Helper z MUI
+import { debounce } from '@mui/material/utils';
 
 import { Button } from '@/shared/ui/Button';
 import { surveyService } from '../api/surveyService';
@@ -19,21 +19,17 @@ interface InviteUsersPanelProps {
 }
 
 export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) => {
-    // --- STAN AUTOCOMPLETE ---
     const [open, setOpen] = useState(false);
     const [options, setOptions] = useState<UserSummary[]>([]);
     const [loadingSearch, setLoadingSearch] = useState(false);
     
-    // Wybrani użytkownicy (całe obiekty)
     const [selectedUsers, setSelectedUsers] = useState<UserSummary[]>([]);
 
-    // --- STAN WYSYŁANIA ---
     const [generatedLinks, setGeneratedLinks] = useState<Record<string, string> | null>(null);
     const [isSending, setIsSending] = useState(false);
     
     const { showSuccess, showError } = useSnackbar();
 
-    // --- 1. LOGIKA WYSZUKIWANIA (DEBOUNCE) ---
     const fetchUsers = useMemo(
         () =>
             debounce(async (input: string, callback: (results: UserSummary[]) => void) => {
@@ -43,7 +39,7 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
                 } catch (e) {
                     callback([]);
                 }
-            }, 400), // Czekaj 400ms po przestaniu pisania
+            }, 400),
         [],
     );
 
@@ -60,7 +56,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
         };
     }, [open]);
 
-    // Handler wpisywania tekstu
     const handleInputChange = (event: any, newInputValue: string) => {
         if (newInputValue === '') {
             setOptions([]);
@@ -74,11 +69,9 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
         });
     };
 
-    // --- 2. LOGIKA WYSYŁANIA ---
     const handleSendInvites = async () => {
         if (selectedUsers.length === 0) return;
 
-        // Mapujemy obiekty na same ID
         const ids = selectedUsers.map(u => u.id);
 
         setIsSending(true);
@@ -87,7 +80,7 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
             
             setGeneratedLinks(tokensMap);
             showSuccess(`Wysłano zaproszenia do ${ids.length} użytkowników!`);
-            setSelectedUsers([]); // Czyścimy wybór
+            setSelectedUsers([]);
         } catch (error) {
             console.error(error);
             showError("Nie udało się wysłać zaproszeń.");
@@ -114,24 +107,18 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
             </Typography>
 
             <Stack spacing={2}>
-                {/* --- AUTOCOMPLETE (Wyszukiwarka) --- */}
                 <Autocomplete
                     multiple
                     open={open}
                     onOpen={() => setOpen(true)}
                     onClose={() => setOpen(false)}
                     
-                    // Opcje to wyniki wyszukiwania
                     options={options}
-                    // Jak wyświetlać opcję na liście
                     getOptionLabel={(option) => option.username}
-                    // Unikalność
                     isOptionEqualToValue={(option, value) => option.id === value.id}
                     
-                    // Obsługa wpisywania (szukanie w API)
                     onInputChange={handleInputChange}
                     
-                    // Obsługa wyboru (zapisywanie do stanu)
                     value={selectedUsers}
                     onChange={(event, newValue) => {
                         setSelectedUsers(newValue);
@@ -168,7 +155,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
                 </Button>
             </Stack>
 
-            {/* --- WYNIKI (LINKI) --- */}
             {generatedLinks && (
                 <Box sx={{ mt: 3 }}>
                     <Divider sx={{ mb: 2 }} />
@@ -177,9 +163,6 @@ export const InviteUsersPanel: React.FC<InviteUsersPanelProps> = ({ roomId }) =>
                     <Stack spacing={1}>
                         {Object.entries(generatedLinks).map(([userId, token]) => {
                             const fullLink = `${joinBaseUrl}?ticket=${token}`;
-                            // Próbujemy znaleźć nazwę usera w opcjach (dla ładniejszego wyświetlania)
-                            // Uwaga: To zadziała tylko dla tych, co byli w 'options' w momencie wysłania.
-                            // Można by mapować userId na username, ale ID też wystarczy dla Hosta.
                             
                             return (
                                 <Box 

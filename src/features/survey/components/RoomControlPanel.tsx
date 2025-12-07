@@ -10,14 +10,12 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { Button } from '@/shared/ui/Button';
-import { surveyService } from '../api/surveyService'; // Używamy serwisu REST
+import { surveyService } from '../api/surveyService';
 import { useNavigate } from 'react-router-dom';
 import { useSurveyRoomSocket } from '../hooks/useSurveyRoomSocket';
 
-// --- PROPSY ---
 interface RoomControlPanelProps {
     roomId: string;
-    // Opcjonalnie: funkcja do odświeżenia strony po zamknięciu
     onCloseSuccess: () => void; 
 }
 
@@ -25,10 +23,8 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
     const navigate = useNavigate();
     const [isClosing, setIsClosing] = useState(false);
     
-    // Pobieramy status na żywo z hooka socketowego
     const { isRoomOpen, liveResults } = useSurveyRoomSocket(roomId); 
 
-    // --- HANDLER ZAMYKANIA POKOJU ---
     const handleCloseRoom = async () => {
         if (!window.confirm("Are you sure you want to close this room? No more submissions will be accepted.")) {
             return;
@@ -36,11 +32,8 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
 
         setIsClosing(true);
         try {
-            // Wywołanie endpointu POST /survey/room/{roomId}/close
             await surveyService.closeRoom(roomId);
             
-            // Backend powinien wysłać ROOM_CLOSED przez socket, ale dla pewności
-            // możemy też wywołać zewnętrzny callback:
             onCloseSuccess(); 
             
         } catch (error) {
@@ -75,7 +68,7 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
                     startIcon={isClosing ? <CircularProgress size={20} color="inherit" /> : <CloseIcon />}
                     onClick={handleCloseRoom}
                     disabled={!isRoomOpen || isClosing}
-                    sx={{ flex: 1 }} // Opcjonalnie: Rozciągnij przycisk
+                    sx={{ flex: 1 }}
                 >
                     {isClosing ? 'Closing...' : 'Close Room'}
                 </Button>
@@ -85,7 +78,7 @@ export const RoomControlPanel: React.FC<RoomControlPanelProps> = ({ roomId, onCl
                     size="large"
                     onClick={() => navigate('/survey')}
                     disabled={isClosing}
-                    sx={{ flex: 1 }} // Opcjonalnie: Rozciągnij przycisk
+                    sx={{ flex: 1 }}
                 >
                     Back to Forms
                 </Button>
