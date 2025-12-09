@@ -47,6 +47,39 @@ const ContestDetailsPage: React.FC = () => {
         }
     };
 
+    const handleCloseSubmissions = async () => {
+        if (!window.confirm("Czy na pewno zamknąć zgłoszenia? Rozpocznie się faza weryfikacji.")) return;
+        
+        setIsProcessing(true);
+        try {
+            await contestService.closeSubmissions(contestId!);
+            showSuccess("Zgłoszenia zamknięte. Status: Weryfikacja.");
+            fetchDetails(); // Odśwież status na DRAFT
+        } catch (e) {
+            showError("Błąd zamykania zgłoszeń.");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleOpenLobby = async () => {
+        if (contest?.organizer) {
+            setIsProcessing(true);
+            try {
+                await contestService.createRoom(contestId!);
+                showSuccess("Łączenie z Lobby...");
+                navigate(`/contest/${contestId}/live`); // PRZEKIEROWANIE
+            } catch (e) {
+                showError("Nie udało się otworzyć Lobby.");
+            } finally {
+                setIsProcessing(false);
+            }
+        } 
+        else {
+             navigate(`/contest/${contestId}/live`);
+        }
+    };
+
     if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 10 }} />;
     if (!contest) return <Container sx={{ mt: 4 }}><Alert severity="error">Konkurs nie istnieje.</Alert></Container>;
 
@@ -61,6 +94,12 @@ const ContestDetailsPage: React.FC = () => {
                     isProcessing={isProcessing}
                     
                     onJoin={handleJoin}
+                    onRefresh={fetchDetails}
+                    
+                    // onEnterStage={handleEnterStage}
+                    onCloseSubmissions={handleCloseSubmissions} 
+                    onOpenLobby={handleOpenLobby}
+
                     onManage={() => navigate(`/contest/${contestId}/manage`)}
                     onReview={() => navigate(`/contest/${contestId}/review`)}
                 />

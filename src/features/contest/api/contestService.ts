@@ -44,6 +44,10 @@ export const contestService = {
         return response.data.url;
     },
 
+    closeSubmissions: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/close-submissions`);
+    },
+
     reviewSubmission: async (contestId: string, submissionId: string, status: ReviewAction, comment?: string) => {
         await apiClient.put(`${BASE_URL}/${contestId}/submission/${submissionId}/review`, {
             status,
@@ -95,5 +99,40 @@ export const contestService = {
     },
     deleteSubmission: async (contestId: string, submissionId: string) => {
         await apiClient.delete(`${BASE_URL}/${contestId}/submission/${submissionId}`);
-    }
+    },
+
+    createRoom: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room`);
+    },
+
+    getRoomDetails: async (contestId: string) => {
+        const response = await apiClient.get<any>(`${BASE_URL}/${contestId}/room`);
+        return response.data;
+    },
+    startContest: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room/start`);
+    },
+
+    nextStage: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room/next-stage`);
+    },
+    finishStage: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room/finish-stage`);
+    },
+
+    closeContest: async (contestId: string) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room/close`);
+    },
+
+    getStageAccessToken: async (contestId: string, roomId: string) => {
+        const response = await apiClient.get<{ token: string }>(`${BASE_URL}/${contestId}/room/${roomId}/token`);
+        return response.data.token;
+    },
+    vote: async (contestId: string, stageId: number, submissionId: string, score: number) => {
+        await apiClient.post(`${BASE_URL}/${contestId}/room/vote`, {
+            stageId,
+            submissionId,
+            score
+        });
+    },
 };

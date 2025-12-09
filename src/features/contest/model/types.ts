@@ -164,3 +164,63 @@ export interface SubmissionDto {
 }
 
 export type ReviewAction = 'APPROVED' | 'REJECTED';
+
+export interface QuizStageSettingsResponse {
+    stageId: number;
+    type: 'QUIZ';
+    quizFormId: number;
+    weight: number;
+    maxParticipants: number;
+    timePerQuestion: number;
+    activeRoomId: string; // ID pokoju w QuizService
+}
+
+export interface SurveyStageSettingsResponse {
+    stageId: number;
+    type: 'SURVEY';
+    surveyFormId: number;
+    maxParticipants: number;
+    durationMinutes: number;
+    activeRoomId: string; // ID pokoju w SurveyService
+}
+
+export interface JuryStageSettingsResponse {
+    stageId: number;
+    type: 'JURY_VOTING';
+    weight: number;
+    maxScore: number;
+    juryRevealMode: JuryRevealMode;
+    showJudgeNames: boolean;
+}
+
+export interface PublicStageSettingsResponse {
+    stageId: number;
+    type: 'PUBLIC_VOTE';
+    weight: number;
+    maxScore: number;
+}
+
+export interface GenericStageSettingsResponse {
+    stageId: number;
+    type: 'GENERIC';
+    // Brak dodatkowych pól
+}
+
+// Unia typów (Polimorfizm)
+export type StageSettingsResponse = 
+    | QuizStageSettingsResponse 
+    | SurveyStageSettingsResponse 
+    | JuryStageSettingsResponse 
+    | PublicStageSettingsResponse 
+    | GenericStageSettingsResponse;
+
+export interface GetContestRoomDetailsResponse {
+    roomId: string;
+    active: boolean;
+    
+    currentStagePosition: number; // 0 = Lobby
+    currentStageId: number | null;
+    
+    // Tutaj TS będzie wiedział, że to może być jeden z powyższych typów
+    currentStageSettings: StageSettingsResponse | null;
+}
