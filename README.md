@@ -1,73 +1,108 @@
-# React + TypeScript + Vite
+# Compezze – Contest Platform (Microservices)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive platform to gather communitty, plan events, for creating and managing contests with smaller services to create quizzes, and surveys in real-time.
+As contest is main functionality, it contains stages, which could be other sessions (quizzes, surveys, public voting, jury voting, generic timer like break etc.)
+The system is built on a microservices architecture using **Spring Boot (Backend)** and **React (Frontend)**.
 
-Currently, two official plugins are available:
+Whole 'production' application can be found here : https://github.com/Banjo7331/Compezze-fullstack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+# 🏗️ System Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The system operates in a distributed model where the **API Gateway** serves as the single entry point for the Frontend.  
+Communication between services occurs:
 
-## Expanding the ESLint configuration
+- Synchronously → REST (Feign)
+- Asynchronously → WebSocket / Events
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Main Components
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Frontend (SPA)** – React (Vite, TypeScript, Material UI)  
+- **API Gateway** – Routing, JWT verification, CORS  
+- **Discovery Service (Eureka)** – Service registry  
+- **Microservices**: Auth, Contest, Quiz, Survey  
+- **Infrastructure**:
+  - PostgreSQL – Main database  
+  - Redis – Cache, Live Rankings  
+  - MinIO (S3) – File storage  
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+# 💻 Frontend – View Structure
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+SPA built with React + Vite. Organized by features.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Auth
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `/login` – Login  
+- `/register` – Register  
+
+### 📸 Screenshots (Auth)
+| Login | Register |
+|--------------|--------------|
+| ![auth-1](./screenshots/auth/login.png) | ![auth-2](./screenshots/auth/register.png) |
+
+
+---
+
+## Contest Hub
+
+- `/contest` – Main page, list of contests  
+- With its subpages for other features  
+
+### 📸 Screenshots (Contest)
+| Main page | Form view | Host Panel |
+|--------------|--------------|--------------|
+| ![contest-1](./screenshots/contest/contest-main-page.png) | ![contest-2](./screenshots/contest/create-contest.png) | ![contest-3](./screenshots/contest/contest-host-view.png) |
+
+---
+
+## Quiz
+
+- `/quiz/` – Quiz page, list of quizzes  
+- With its subpages for other features  
+
+### 📸 Screenshots (Quiz)
+| Quiz Form | Participant view | Host view |
+|--------------|--------------|--------------|
+| ![quiz-1](./screenshots/quiz/quiz-form.png) | ![quiz-2](./screenshots/quiz/quiz-joiner.png) | ![quiz-3](./screenshots/quiz/quiz-host.png) |
+
+---
+
+## Survey
+
+- `/survey/` – Survey page, list of surveys  
+- With its subpages for other features  
+
+### 📸 Screenshots (Survey)
+| Survey page | Participant view | Host view |
+|--------------|--------------|--------------|
+| ![survey-1](./screenshots/survey/survey-page.png) | ![survey-2](./screenshots/survey/survey-joiner.png) | ![survey-3](./screenshots/survey/survey-host.png) |
+
+---
+
+## Profile
+
+- `/profile/` – User account page (account actions, room results, created forms etc.)
+
+### 📸 Screenshots (Profile)
+| Survey view | Survey room Results | Quiz room Reuslts |
+|--------------|--------------|--------------|
+| ![profile-1](./screenshots/profile/profile-survey.png) | ![profile-2](./screenshots/profile/profile-survey-results.png) | ![profile-3](./screenshots/profile/profile-quiz-results.png) |
+
+---
+
+# 🛠️ Running the Project (Dev)
+
+## Requirements
+
+- Docker & Docker Compose
+- Node.js 20+  
+
+---
+
+## 1. Start Infrastructure
+
+```sh
+npm run dev
