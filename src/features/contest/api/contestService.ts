@@ -63,7 +63,7 @@ export const contestService = {
         return response.data;
     },
     joinContest: async (id: string) => {
-        await apiClient.post(`${BASE_URL}/${id}/room/${roomId}/join`);
+        await apiClient.post(`${BASE_URL}/${id}/join`);
     },
     getParticipants: async (contestId: string, query?: string) => {
         const response = await apiClient.get<ContestParticipantDto[]>(`${BASE_URL}/${contestId}/participant`, {

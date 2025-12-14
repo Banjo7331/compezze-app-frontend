@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, CircularProgress, Alert, Box, Stack, Paper, Typography } from '@mui/material';
+import { Container, CircularProgress, Alert, Box, Stack, Paper, Typography, Grid } from '@mui/material'; // ✅ Dodano Grid
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import NextPlanIcon from '@mui/icons-material/NextPlan';
 import FlagIcon from '@mui/icons-material/Flag';
@@ -13,6 +13,7 @@ import type { GetContestRoomDetailsResponse, ContestDetailsDto } from '@/feature
 
 import { ContestLobbyView } from '@/features/contest/components/ContestLobbyView';
 import { ContestStageRenderer } from '@/features/contest/components/ContestStageRenderer';
+import { ContestLiveChat } from '@/features/contest/components/ContestLiveChat'; // ✅ Import Czatu
 
 const ContestLivePage: React.FC = () => {
     const { contestId } = useParams<{ contestId: string }>();
@@ -52,7 +53,7 @@ const ContestLivePage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [contestId, contestInfo]);
+    }, [contestId, contestInfo, showError]);
 
     useEffect(() => {
         if (contestId) fetchState();
@@ -65,9 +66,8 @@ const ContestLivePage: React.FC = () => {
 
     // --- HANDLERY ---
     const handleStartContest = async () => {
-        if (!roomState?.roomId) return; // Zabezpieczenie
+        if (!roomState?.roomId) return;
         try {
-            // Przekazujemy contestId ORAZ roomId (który mamy w stanie)
             await contestService.startContest(contestId!, roomState.roomId);
             showSuccess("Konkurs wystartował!");
             fetchState(); 
@@ -105,56 +105,75 @@ const ContestLivePage: React.FC = () => {
     const isLobby = roomState.currentStagePosition === 0;
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
             <Box mb={2}>
                 <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`/contest/${contestId}`)}>
                     Wyjdź z Live
                 </Button>
             </Box>
 
-            {isLobby ? (
-                <ContestLobbyView isOrganizer={isOrganizer} onStart={handleStartContest} />
-            ) : (
-                <Box>
-                    <Box textAlign="center" mb={4}>
-                         <Typography variant="overline" fontSize="1.2rem" letterSpacing={4} color="text.secondary">
-                             ETAP {roomState.currentStagePosition}
-                         </Typography>
-                    </Box>
-
-                    {roomState.currentStageSettings ? (
-                        <ContestStageRenderer 
-                            settings={roomState.currentStageSettings}
-                            isOrganizer={isOrganizer}
-                            ticket={stageTicket}
-                            // ✅ PRZEKAZUJEMY NOWE DANE
-                            contestId={contestId!}
-                            isJury={isJury}
-                        />
+            {/* ✅ KROK 1: alignItems="stretch" sprawia, że obie kolumny mają równą wysokość */}
+            <Grid container spacing={3} alignItems="stretch">
+                
+                {/* --- KOLUMNA LEWA (Lobby/Scena) --- */}
+                <Grid size={{ xs: 12, md: 9 }}>
+                    {isLobby ? (
+                        /* To ma minHeight: 60vh (ustawione w ContestLobbyView), więc Grid przyjmie tę wysokość */
+                        <ContestLobbyView isOrganizer={isOrganizer} onStart={handleStartContest} />
                     ) : (
-                        <Paper sx={{ p: 6, textAlign: 'center' }}>
-                            <Typography variant="h4" gutterBottom>Przerwa / Wyniki</Typography>
-                            <Typography color="text.secondary">Oczekuj na rozpoczęcie kolejnego etapu.</Typography>
+                        <Box sx={{ height: '100%' }}> {/* Też dajemy 100%, żeby scena wypełniała */}
+                            <Box textAlign="center" mb={2}>
+                                 <Typography variant="overline" fontSize="1rem" letterSpacing={3} color="text.secondary">
+                                     ETAP {roomState.currentStagePosition}
+                                 </Typography>
+                            </Box>
+
+                            <Box sx={{ minHeight: '60vh' }}>
+                                {roomState.currentStageSettings ? (
+                                    <ContestStageRenderer 
+                                        settings={roomState.currentStageSettings}
+                                        isOrganizer={isOrganizer}
+                                        ticket={stageTicket}
+                                        contestId={contestId!}
+                                        isJury={isJury}
+                                    />
+                                ) : (
+                                    <Paper sx={{ p: 6, textAlign: 'center' }}>
+                                        <Typography variant="h4" gutterBottom>Przerwa / Wyniki</Typography>
+                                    </Paper>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+
+                    {/* Panel Organizatora */}
+                    {isOrganizer && !isLobby && (
+                        <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: '#212121', color: 'white', borderRadius: 2 }}>
+                             <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography variant="subtitle1" fontWeight="bold">PANEL STEROWANIA</Typography>
+                                <Stack direction="row" spacing={2}>
+                                    <Button variant="contained" color="secondary" endIcon={<NextPlanIcon />} onClick={handleNextStage}>
+                                        Następny Etap
+                                    </Button>
+                                    <Button variant="outlined" color="error" startIcon={<FlagIcon />} onClick={handleCloseContest}>
+                                        Koniec
+                                    </Button>
+                                </Stack>
+                            </Stack>
                         </Paper>
                     )}
-                </Box>
-            )}
+                </Grid>
 
-            {isOrganizer && !isLobby && (
-                <Paper elevation={10} sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, p: 2, bgcolor: '#212121', color: 'white', zIndex: 1000 }}>
-                    <Container maxWidth="lg">
-                        <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            <Typography variant="subtitle1" fontWeight="bold">PANEL STEROWANIA</Typography>
-                            <Stack direction="row" spacing={2}>
-                                <Button variant="contained" color="secondary" endIcon={<NextPlanIcon />} onClick={handleNextStage}>Następny Etap</Button>
-                                <Button variant="outlined" color="error" startIcon={<FlagIcon />} onClick={handleCloseContest}>Koniec</Button>
-                            </Stack>
-                        </Stack>
-                    </Container>
-                </Paper>
-            )}
-            
-            {isOrganizer && !isLobby && <Box sx={{ height: 100 }} />}
+                {/* --- KOLUMNA PRAWA (Czat) --- */}
+                <Grid size={{ xs: 12, md: 3 }}>
+                    {/* ✅ KROK 2: Usuwamy calc(). Dajemy 100% wysokości rodzica (Grid item) */}
+                    {/* Dzięki temu czat rozciągnie się idealnie do wysokości LobbyView obok */}
+                    <Box sx={{ height: '100%', minHeight: '500px' }}>
+                         {contestId && <ContestLiveChat contestId={contestId} />}
+                    </Box>
+                </Grid>
+
+            </Grid>
         </Container>
     );
 };
