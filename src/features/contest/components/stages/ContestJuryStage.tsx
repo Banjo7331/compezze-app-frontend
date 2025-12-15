@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Box, Typography, Grid, Card, CardContent, CardMedia, Button, 
-    Slider, Stack, Alert, Chip, Divider, LinearProgress ,CircularProgress, 
-    Paper
+    Slider, Stack, Alert, CircularProgress, Paper
 } from '@mui/material';
 import GavelIcon from '@mui/icons-material/Gavel';
 import RateReviewIcon from '@mui/icons-material/RateReview';
@@ -14,24 +13,28 @@ import type { SubmissionDto, StageSettingsResponse } from '@/features/contest/mo
 
 interface Props {
     contestId: string;
-    settings: StageSettingsResponse & { type: 'JURY_VOTING' };
+    roomId: string;
+    settings: StageSettingsResponse & { type: 'JURY_VOTE' };
     isOrganizer: boolean;
     isJury: boolean;
 }
 
-export const ContestJuryStage: React.FC<Props> = ({ contestId, settings, isOrganizer, isJury }) => {
+export const ContestJuryStage: React.FC<Props> = ({ contestId, roomId, settings, isOrganizer, isJury }) => {
     const { showSuccess, showError } = useSnackbar();
     
     const [submissions, setSubmissions] = useState<SubmissionDto[]>([]);
-    const [currentSubIndex, setCurrentSubIndex] = useState(0); // Którą pracę oceniamy?
-    const [score, setScore] = useState<number>(settings.maxScore / 2); // Domyślna ocena w połowie
+    const [currentSubIndex, setCurrentSubIndex] = useState(0); 
+    const [score, setScore] = useState<number>(settings.maxScore / 2);
     const [hasVoted, setHasVoted] = useState(false);
+
+    // ✅ NOWY STAN: Link do mediów i loader
+    const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+    const [mediaLoading, setMediaLoading] = useState(false);
 
     // 1. Pobieramy zgłoszenia (APPROVED only)
     useEffect(() => {
         const fetch = async () => {
             try {
-                // Pobieramy zatwierdzone prace
                 const list: any = await contestService.getSubmissionsForReview(contestId, 'APPROVED');
                 const data = Array.isArray(list) ? list : list.content;
                 setSubmissions(data || []);
@@ -44,28 +47,51 @@ export const ContestJuryStage: React.FC<Props> = ({ contestId, settings, isOrgan
 
     const currentSubmission = submissions[currentSubIndex];
 
-    // 2. Handler Głosu
+    // ✅ 2. Pobieranie URL do pliku (MinIO) przy każdej zmianie pracy
+    useEffect(() => {
+        if (!currentSubmission?.id) return;
+
+        let isMounted = true;
+        setMediaLoading(true);
+        setMediaUrl(null); // Reset URL przy zmianie slajdu
+
+        const fetchMedia = async () => {
+            try {
+                // Pobieramy tymczasowy link do pliku
+                const url = await contestService.getSubmissionMediaUrl(contestId, currentSubmission.id);
+                if (isMounted) {
+                    setMediaUrl(url);
+                }
+            } catch (e) {
+                console.error("Błąd ładowania multimediów:", e);
+            } finally {
+                if (isMounted) setMediaLoading(false);
+            }
+        };
+
+        fetchMedia();
+
+        return () => { isMounted = false; };
+    }, [contestId, currentSubmission?.id]);
+
+    // 3. Handler Głosu
     const handleVote = async () => {
         if (!currentSubmission) return;
         try {
-            await contestService.vote(contestId, settings.stageId, currentSubmission.id, score);
+            await contestService.vote(contestId, roomId, settings.stageId, currentSubmission.id, score);
             showSuccess(`Oddano głos: ${score}`);
             setHasVoted(true);
-            
-            // Logika "Jeśli wszyscy zagłosują -> Next" jest po stronie Backendu/Socketów.
-            // Tutaj symulujemy, że po głosie sędzia czeka.
         } catch (e) {
             showError("Błąd głosowania (może już oceniałeś?).");
         }
     };
 
-    // 3. Handler Hosta (Następna praca)
+    // 4. Handler Hosta (Następna praca)
     const handleNextSubmission = () => {
         if (currentSubIndex < submissions.length - 1) {
             setCurrentSubIndex(prev => prev + 1);
-            setHasVoted(false); // Reset dla następnej pracy
+            setHasVoted(false);
             setScore(settings.maxScore / 2);
-            // Tu można wysłać socket event "PRESENT_SUBMISSION"
         }
     };
 
@@ -80,7 +106,7 @@ export const ContestJuryStage: React.FC<Props> = ({ contestId, settings, isOrgan
         return <Alert severity="info">Brak zatwierdzonych prac do oceny.</Alert>;
     }
 
-    if (!currentSubmission) return <CircularProgress />;
+    if (!currentSubmission) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 10 }} />;
 
     return (
         <Box>
@@ -103,27 +129,48 @@ export const ContestJuryStage: React.FC<Props> = ({ contestId, settings, isOrgan
                 )}
             </Paper>
 
-            {/* PREZENTACJA PRACY (WIDOK DLA WSZYSTKICH) */}
             <Grid container spacing={4}>
+                
+                {/* --- LEWA STRONA: PREZENTACJA PRACY (Z poprawionym obrazkiem) --- */}
                 <Grid size={{ xs: 12, md: 7 }}>
                     <Card elevation={4}>
-                        <CardMedia
-                            component={currentSubmission.contentUrl?.endsWith('.mp4') ? 'video' : 'img'}
-                            image={currentSubmission.contentUrl || "https://via.placeholder.com/800x600?text=Brak+Podglądu"}
-                            controls
-                            autoPlay
-                            sx={{ height: 400, bgcolor: '#000', objectFit: 'contain' }}
-                        />
+                        <Box sx={{ 
+                            height: 400, 
+                            bgcolor: 'black', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            overflow: 'hidden'
+                        }}>
+                            {mediaLoading ? (
+                                <CircularProgress color="warning" />
+                            ) : mediaUrl ? (
+                                <CardMedia
+                                    component={mediaUrl.endsWith('.mp4') ? 'video' : 'img'} // Proste wykrywanie wideo po rozszerzeniu
+                                    image={mediaUrl}
+                                    controls={mediaUrl.endsWith('.mp4')}
+                                    autoPlay={mediaUrl.endsWith('.mp4')}
+                                    sx={{ 
+                                        height: '100%', 
+                                        width: '100%', 
+                                        objectFit: 'contain' // Ważne: skaluje obrazek bez ucinania
+                                    }}
+                                />
+                            ) : (
+                                <Typography color="error">Nie udało się załadować podglądu</Typography>
+                            )}
+                        </Box>
+                        
                         <CardContent>
                             <Typography variant="h4" gutterBottom>{currentSubmission.participantName}</Typography>
                             <Typography variant="body1" color="text.secondary">
-                                "Tytuł pracy lub opis..."
+                                {currentSubmission.comment || "Brak opisu."}
                             </Typography>
                         </CardContent>
                     </Card>
                 </Grid>
 
-                {/* PANEL GŁOSOWANIA (TYLKO DLA JURY) */}
+                {/* --- PRAWA STRONA: PANEL OCENY --- */}
                 <Grid size={{ xs: 12, md: 5 }}>
                     {isJury ? (
                         <Paper elevation={3} sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

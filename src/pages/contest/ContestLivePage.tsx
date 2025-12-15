@@ -13,9 +13,13 @@ import type { GetContestRoomDetailsResponse, ContestDetailsDto } from '@/feature
 
 import { ContestLobbyView } from '@/features/contest/components/ContestLobbyView';
 import { ContestStageRenderer } from '@/features/contest/components/ContestStageRenderer';
-import { ContestLiveChat } from '@/features/contest/components/ContestLiveChat'; // ✅ Import Czatu
+import { ContestLiveChat } from '@/features/contest/components/ContestLiveChat';
+import { ContestLeaderboard } from '@/features/contest/components/ContestLeaderboard';
+
+import { useAuth } from '@/features/auth/AuthContext';
 
 const ContestLivePage: React.FC = () => {
+    const { currentUserId } = useAuth();
     const { contestId } = useParams<{ contestId: string }>();
     const navigate = useNavigate();
     const { showSuccess, showError } = useSnackbar();
@@ -23,8 +27,9 @@ const ContestLivePage: React.FC = () => {
     const [roomState, setRoomState] = useState<GetContestRoomDetailsResponse | null>(null);
     const [contestInfo, setContestInfo] = useState<ContestDetailsDto | null>(null); 
     const [stageTicket, setStageTicket] = useState<string | null>(null);
-    
+
     const [isLoading, setIsLoading] = useState(true);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     const fetchState = useCallback(async () => {
         try {
@@ -61,7 +66,13 @@ const ContestLivePage: React.FC = () => {
 
     useContestSocket({ 
         contestId, 
-        onRefresh: fetchState 
+        onRefresh: () => {
+            console.log("🔄 Otrzymano sygnał zmiany etapu/stanu!");
+            setIsTransitioning(true);
+            fetchState().then(() => {
+                setIsTransitioning(false);
+            });
+        }
     });
 
     // --- HANDLERY ---
@@ -100,75 +111,100 @@ const ContestLivePage: React.FC = () => {
     if (isLoading) return <CircularProgress sx={{ display: 'block', mx: 'auto', mt: 10 }} />;
     if (!roomState) return <Container sx={{ mt: 4 }}><Alert severity="error">Błąd sesji.</Alert></Container>;
 
+    if (isTransitioning) {
+        return (
+            <Container maxWidth="xl" sx={{ py: 4, height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box textAlign="center">
+                    <CircularProgress size={60} thickness={4} sx={{ mb: 2 }} />
+                    <Typography variant="h5" fontWeight="bold">Aktualizacja etapu...</Typography>
+                    <Typography color="text.secondary">Pobieranie nowych danych</Typography>
+                </Box>
+            </Container>
+        );
+    }
+
     const isOrganizer = contestInfo?.organizer || false;
     const isJury = contestInfo?.myRoles?.includes('JURY') || false;
     const isLobby = roomState.currentStagePosition === 0;
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
+            {/* Przycisk Wyjścia */}
             <Box mb={2}>
                 <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(`/contest/${contestId}`)}>
                     Wyjdź z Live
                 </Button>
             </Box>
 
-            {/* ✅ KROK 1: alignItems="stretch" sprawia, że obie kolumny mają równą wysokość */}
-            <Grid container spacing={3} alignItems="stretch">
+            {/* ✅ UKŁAD 3-KOLUMNOWY */}
+            <Grid container spacing={2} alignItems="stretch">
                 
-                {/* --- KOLUMNA LEWA (Lobby/Scena) --- */}
-                <Grid size={{ xs: 12, md: 9 }}>
+                {/* --- KOLUMNA LEWA: RANKING (3/12) --- */}
+                <Grid size={{ xs: 12, md: 3 }}>
+                    <Box sx={{ height: '100%', maxHeight: 'calc(100vh - 200px)', overflowY: 'hidden' }}>
+                        {roomState?.leaderboard && (
+                            <ContestLeaderboard 
+                                leaderboard={roomState.leaderboard} 
+                                currentUserId={currentUserId} 
+                            />
+                        )}
+                    </Box>
+                </Grid>
+
+                {/* --- KOLUMNA ŚRODKOWA: SCENA (6/12) --- */}
+                <Grid size={{ xs: 12, md: 6 }}>
                     {isLobby ? (
-                        /* To ma minHeight: 60vh (ustawione w ContestLobbyView), więc Grid przyjmie tę wysokość */
                         <ContestLobbyView isOrganizer={isOrganizer} onStart={handleStartContest} />
                     ) : (
-                        <Box sx={{ height: '100%' }}> {/* Też dajemy 100%, żeby scena wypełniała */}
+                        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <Box textAlign="center" mb={2}>
                                  <Typography variant="overline" fontSize="1rem" letterSpacing={3} color="text.secondary">
                                      ETAP {roomState.currentStagePosition}
                                  </Typography>
                             </Box>
 
-                            <Box sx={{ minHeight: '60vh' }}>
+                            <Box sx={{ flexGrow: 1, minHeight: '50vh' }}>
                                 {roomState.currentStageSettings ? (
                                     <ContestStageRenderer 
+                                        roomId={roomState.roomId}
                                         settings={roomState.currentStageSettings}
                                         isOrganizer={isOrganizer}
                                         ticket={stageTicket}
                                         contestId={contestId!}
                                         isJury={isJury}
+                                        // Przekaż obecne zgłoszenie, jeśli potrzebne w JuryVoteStage
+                                        currentSubmission={roomState.currentSubmission} 
                                     />
                                 ) : (
-                                    <Paper sx={{ p: 6, textAlign: 'center' }}>
-                                        <Typography variant="h4" gutterBottom>Przerwa / Wyniki</Typography>
+                                    <Paper sx={{ p: 6, textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Typography variant="h4" color="text.secondary">Przerwa / Wyniki</Typography>
                                     </Paper>
                                 )}
                             </Box>
-                        </Box>
-                    )}
 
-                    {/* Panel Organizatora */}
-                    {isOrganizer && !isLobby && (
-                        <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: '#212121', color: 'white', borderRadius: 2 }}>
-                             <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="subtitle1" fontWeight="bold">PANEL STEROWANIA</Typography>
-                                <Stack direction="row" spacing={2}>
-                                    <Button variant="contained" color="secondary" endIcon={<NextPlanIcon />} onClick={handleNextStage}>
-                                        Następny Etap
-                                    </Button>
-                                    <Button variant="outlined" color="error" startIcon={<FlagIcon />} onClick={handleCloseContest}>
-                                        Koniec
-                                    </Button>
-                                </Stack>
-                            </Stack>
-                        </Paper>
+                            {/* Panel Organizatora (pod sceną) */}
+                            {isOrganizer && (
+                                <Paper elevation={3} sx={{ mt: 3, p: 2, bgcolor: '#212121', color: 'white', borderRadius: 2 }}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="subtitle2" fontWeight="bold">PANEL</Typography>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button size="small" variant="contained" color="secondary" onClick={handleNextStage}>
+                                                Dalej
+                                            </Button>
+                                            <Button size="small" variant="outlined" color="error" onClick={handleCloseContest}>
+                                                Stop
+                                            </Button>
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
+                            )}
+                        </Box>
                     )}
                 </Grid>
 
-                {/* --- KOLUMNA PRAWA (Czat) --- */}
+                {/* --- KOLUMNA PRAWA: CZAT (3/12) --- */}
                 <Grid size={{ xs: 12, md: 3 }}>
-                    {/* ✅ KROK 2: Usuwamy calc(). Dajemy 100% wysokości rodzica (Grid item) */}
-                    {/* Dzięki temu czat rozciągnie się idealnie do wysokości LobbyView obok */}
-                    <Box sx={{ height: '100%', minHeight: '500px' }}>
+                    <Box sx={{ height: '100%', minHeight: '500px', maxHeight: 'calc(100vh - 200px)' }}>
                          {contestId && <ContestLiveChat contestId={contestId} />}
                     </Box>
                 </Grid>
