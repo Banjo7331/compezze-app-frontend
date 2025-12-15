@@ -15,6 +15,7 @@ import { ContestLobbyView } from '@/features/contest/components/ContestLobbyView
 import { ContestStageRenderer } from '@/features/contest/components/ContestStageRenderer';
 import { ContestLiveChat } from '@/features/contest/components/ContestLiveChat';
 import { ContestLeaderboard } from '@/features/contest/components/ContestLeaderboard';
+import { ContestFinishedView } from '@/features/contest/components/ContestFinishedView';
 
 import { useAuth } from '@/features/auth/AuthContext';
 
@@ -30,6 +31,7 @@ const ContestLivePage: React.FC = () => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const isFinished = contestInfo?.status === 'FINISHED';
 
     const fetchState = useCallback(async () => {
         try {
@@ -127,6 +129,18 @@ const ContestLivePage: React.FC = () => {
     const isJury = contestInfo?.myRoles?.includes('JURY') || false;
     const isLobby = roomState.currentStagePosition === 0;
 
+    if (isFinished) {
+        return (
+            <ContestFinishedView 
+                // Pobieramy leaderboard z roomState (jeśli backend go zwrócił w "trybie finished")
+                // lub pustą tablicę, żeby się nie wywaliło
+                leaderboard={roomState?.leaderboard || []} 
+                currentUserId={currentUserId}
+                contestId={contestId!}
+            />
+        );
+    }
+
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
             {/* Przycisk Wyjścia */}
@@ -172,8 +186,6 @@ const ContestLivePage: React.FC = () => {
                                         ticket={stageTicket}
                                         contestId={contestId!}
                                         isJury={isJury}
-                                        // Przekaż obecne zgłoszenie, jeśli potrzebne w JuryVoteStage
-                                        currentSubmission={roomState.currentSubmission} 
                                     />
                                 ) : (
                                     <Paper sx={{ p: 6, textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

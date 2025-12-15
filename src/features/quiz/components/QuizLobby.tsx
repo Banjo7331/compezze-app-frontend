@@ -20,9 +20,6 @@ export const QuizLobby: React.FC<QuizLobbyProps> = ({ isHost, roomId, participan
                 <Typography variant="h3" gutterBottom fontWeight="bold">
                     {isHost ? "Panel Hosta" : "Oczekiwanie na start..."}
                 </Typography>
-                <Typography variant="h6" color="text.secondary">
-                    Kod Pokoju: <strong>{roomId}</strong>
-                </Typography>
             </Box>
 
             {/* ✅ TERAZ TO JEST PROSTA KARTA, bez wbudowanego panelu zaproszeń */}
